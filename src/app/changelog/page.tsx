@@ -8,6 +8,30 @@ export default function ChangelogPage() {
 
   const releases = [
     {
+      version: 'v2.0.0',
+      date: '2026-05-23',
+      added: {
+        en: [],
+        id: []
+      },
+      fixed: {
+        en: [],
+        id: []
+      },
+      changed: {
+        en: [
+          'Restructured repository layout by moving all files and folders from the prd-generator subdirectory directly to the workspace root directory (d:\\CODE\\PRD-MAKER) for direct workspace access.',
+          'Relocated git history, configuration, environment variables (.env.local), and package dependencies directly to the workspace root.',
+          'Upgraded project branch to v2.0.0 major version branch.'
+        ],
+        id: [
+          'Restrukturisasi tata letak repositori dengan memindahkan semua file dan folder dari subdirektori prd-generator langsung ke direktori root workspace (d:\\CODE\\PRD-MAKER) untuk akses workspace langsung.',
+          'Relokasi riwayat git, konfigurasi, variabel lingkungan (.env.local), dan dependensi paket langsung ke root workspace.',
+          'Peningkatan branch proyek ke branch versi utama v2.0.0.'
+        ]
+      }
+    },
+    {
       version: 'v1.1.1',
       date: '2026-05-22',
       added: {
@@ -17,12 +41,14 @@ export default function ChangelogPage() {
       fixed: {
         en: [
           'Synced state loading inside React useEffect in prd/[id]/page.tsx using a self-contained fetchData logic combined with a refreshTrigger state to resolve the cascading renders static analysis error completely.',
+          'Adjusted bullet dot alignment in the PRD view page (prd/[id]/page.tsx) by replacing items-baseline with items-start and a precision top margin for perfect horizontal centering.',
           'Removed unused imports (useCallback, useEffect) from src/components/Sidebar.tsx and src/app/login/page.tsx to eliminate code smell and clean up linter warnings.',
           'Cleaned up multiple Tailwind CSS utility warnings on src/app/page.tsx (using standard hover:-translate-y-px, fixing layout conflicts on hidden/flex classes, and migrating from h-[1px] to h-px).',
           'Avoided unused map variables (i) in src/app/page.tsx loops.'
         ],
         id: [
           'Sinkronisasi pemuatan status di dalam hook useEffect React pada prd/[id]/page.tsx menggunakan logika fetchData terenkapsulasi yang dipadukan dengan status refreshTrigger untuk sepenuhnya menyelesaikan kesalahan analisis statik cascading renders.',
+          'Penyelarasan perataan titik bullet di halaman tampilan PRD (prd/[id]/page.tsx) dengan mengganti items-baseline ke items-start dan margin atas presisi untuk pemusatan horizontal yang sempurna.',
           'Penghapusan impor yang tidak digunakan (useCallback, useEffect) dari src/components/Sidebar.tsx dan src/app/login/page.tsx untuk menghilangkan bau kode dan merapikan peringatan linter.',
           'Pembersihan beberapa peringatan utilitas Tailwind CSS pada src/app/page.tsx (menggunakan hover:-translate-y-px standar, memperbaiki konflik tata letak kelas hidden/flex, dan memigrasikan h-[1px] ke h-px).',
           'Penghindaran variabel pemetaan yang tidak digunakan (i) di dalam perulangan src/app/page.tsx.'
@@ -124,6 +150,23 @@ export default function ChangelogPage() {
                   </h3>
                   <ul className="space-y-2">
                     {rel.added[language].map((item, idx) => (
+                      <li key={idx} className="text-sm text-ink-secondary leading-relaxed flex items-baseline gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-accent shrink-0 translate-y-[8px]" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Changed section */}
+              {rel.changed && rel.changed[language] && rel.changed[language].length > 0 && (
+                <div className="space-y-3 pt-2">
+                  <h3 className="font-display text-sm font-bold uppercase tracking-wider text-ink">
+                    {language === 'en' ? 'Changed' : 'Diubah'}
+                  </h3>
+                  <ul className="space-y-2">
+                    {rel.changed[language].map((item, idx) => (
                       <li key={idx} className="text-sm text-ink-secondary leading-relaxed flex items-baseline gap-2">
                         <span className="w-1.5 h-1.5 rounded-full bg-accent shrink-0 translate-y-[8px]" />
                         <span>{item}</span>
