@@ -196,7 +196,10 @@ RULES:
       .from('prd_versions')
       .insert({ prd_id: prd.id, version_number: 1, content: prdContent })
 
-    if (versionError) throw versionError
+    if (versionError) {
+      await supabase.from('prds').delete().eq('id', prd.id)
+      throw versionError
+    }
 
     return NextResponse.json({ success: true, prdId: prd.id })
   } catch (error: unknown) {

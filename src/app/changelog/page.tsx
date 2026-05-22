@@ -8,6 +8,30 @@ export default function ChangelogPage() {
 
   const releases = [
     {
+      version: 'v2.0.1',
+      date: '2026-05-23',
+      added: {
+        en: [],
+        id: []
+      },
+      fixed: {
+        en: [
+          'Fixed missing React elements bug on language switch in page.tsx by using index as stable key for feature grid array.',
+          'Fixed cascading render warning in LanguageContext.tsx by deferring the initial state setting on hydration using setTimeout.',
+          'Resolved static analysis TypeScript error in exportMd.ts by explicitly silencing @typescript-eslint/no-explicit-any.',
+          'Replaced the bright native scrollbars in Chrome/Edge with cross-browser subtle themed scrollbars in globals.css.',
+          'Removed the Powered by Groq indicator from the landing page layout.'
+        ],
+        id: [
+          'Memperbaiki bug hilangnya elemen React saat beralih bahasa di page.tsx dengan menggunakan index sebagai key stabil untuk array grid fitur.',
+          'Memperbaiki peringatan cascading render di LanguageContext.tsx dengan menunda pembaruan status awal saat hidrasi menggunakan setTimeout.',
+          'Menyelesaikan error TypeScript analisis statik di exportMd.ts dengan menyembunyikan @typescript-eslint/no-explicit-any.',
+          'Mengganti scrollbar native yang terlalu terang di Chrome/Edge dengan scrollbar halus bertema lintas-browser di globals.css.',
+          'Menghilangkan indikator Powered by Groq dari tata letak halaman pendaratan.'
+        ]
+      }
+    },
+    {
       version: 'v2.0.0',
       date: '2026-05-23',
       added: {

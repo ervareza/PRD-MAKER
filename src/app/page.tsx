@@ -343,12 +343,6 @@ export default function Home() {
       <section className="px-6 pt-16 pb-12 max-w-5xl mx-auto w-full text-center sm:text-left">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           <div className="lg:col-span-6 space-y-6">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-surface-1 border border-border rounded-full">
-              <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
-              <span className="text-[10px] font-mono tracking-widest text-ink-secondary uppercase">
-                Powered by Groq · Llama 3.3 70B
-              </span>
-            </div>
 
             <h1 className="font-display text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-ink leading-[1.08]">
               {t('landing.title')}
@@ -415,7 +409,7 @@ export default function Home() {
               {/* Main Workspace Frame */}
               <div className="flex-1 flex overflow-hidden bg-surface-0 min-h-0">
                 {/* Mock Minimal Sidebar */}
-                <div className="w-[180px] bg-surface-1 border-r border-border/80 p-3 flex-col justify-between shrink-0 hidden sm:flex select-none">
+                <div className="w-[140px] sm:w-[180px] bg-surface-1 border-r border-border/80 p-3 flex flex-col justify-between shrink-0 select-none">
                   <div className="space-y-4">
                     <div className="bg-surface-raised border border-border-subtle rounded-md px-2 py-1.5 text-xs text-ink-secondary flex items-center gap-1.5">
                       <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -446,12 +440,12 @@ export default function Home() {
                   </div>
                   <div className="border-t border-border-subtle pt-2 flex items-center gap-2">
                     <div className="w-5 h-5 rounded-full bg-accent text-white font-semibold text-[10px] flex items-center justify-center font-mono">JD</div>
-                    <span className="text-[10px] text-ink-secondary font-medium">Jane Doe</span>
+                    <span className="text-[10px] text-ink-secondary font-medium truncate">Jane Doe</span>
                   </div>
                 </div>
 
                 {/* Simulated Document view */}
-                <div className="flex-1 flex flex-col min-w-0 bg-surface-0 overflow-y-auto">
+                <div className="flex-1 flex flex-col min-w-0 bg-surface-0 overflow-y-auto overflow-x-hidden scrollbar-thin">
                   {/* Editor Header inside Mockup */}
                   <div className="p-4 border-b border-border-subtle bg-surface-raised shrink-0 flex items-center justify-between select-none">
                     <div className="min-w-0">
@@ -663,9 +657,9 @@ export default function Home() {
             variants={stagger}
             className="grid grid-cols-1 md:grid-cols-3 gap-8"
           >
-            {features.map((f) => (
+            {features.map((f, i) => (
               <motion.div
-                key={f.title}
+                key={i}
                 variants={fadeUp}
                 transition={{ duration: 0.5 }}
                 className="bg-surface-raised border border-border rounded-lg p-6 space-y-4 hover:shadow-md hover:border-border transition-all duration-300"

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useState, useCallback, useMemo, ReactNode } from 'react'
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from 'react'
 
 type Language = 'en' | 'id'
 
@@ -61,17 +61,22 @@ const translations: Record<Language, Record<string, string>> = {
   },
 }
 
-function getInitialLanguage(): Language {
-  if (typeof window === 'undefined') return 'en'
-  const stored = localStorage.getItem('app_lang')
-  if (stored === 'en' || stored === 'id') return stored
-  return navigator.language.startsWith('id') ? 'id' : 'en'
-}
-
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined)
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguageState] = useState<Language>(getInitialLanguage)
+  const [language, setLanguageState] = useState<Language>('en')
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      const stored = localStorage.getItem('app_lang')
+      if (stored === 'en' || stored === 'id') {
+        setLanguageState(stored)
+      } else if (navigator.language.startsWith('id')) {
+        setLanguageState('id')
+      }
+    }, 0)
+    return () => clearTimeout(timeout)
+  }, [])
 
   const setLanguage = useCallback((lang: Language) => {
     setLanguageState(lang)

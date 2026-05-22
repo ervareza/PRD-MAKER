@@ -58,18 +58,48 @@ export default function Sidebar({ userEmail }: SidebarProps) {
 
   const [prds, setPrds] = useState<PrdItem[]>([])
   const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('')
   const [showLogout, setShowLogout] = useState(false)
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const [isLoadingPrds, setIsLoadingPrds] = useState(true)
+
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [searchQuery])
+
+  // Save the logged in email to recent accounts on load
+  useEffect(() => {
+    if (!userEmail) return
+    try {
+      const stored = localStorage.getItem('prd_recent_accounts')
+      const accounts: string[] = stored ? JSON.parse(stored) : []
+      if (!accounts.includes(userEmail)) {
+        accounts.unshift(userEmail)
+        localStorage.setItem(
+          'prd_recent_accounts',
+          JSON.stringify(accounts.slice(0, 5))
+        )
+      }
+    } catch {
+      // ignore localStorage errors
+    }
+  }, [userEmail])
 
   useEffect(() => {
     let isMounted = true
     const fetchPrds = async () => {
+      setIsLoadingPrds(true)
       const { data } = await supabase
         .from('prds')
         .select('id, title, updated_at')
         .order('updated_at', { ascending: false })
       if (isMounted && data) {
         setPrds(data)
+        setIsLoadingPrds(false)
       }
     }
     fetchPrds()
@@ -91,7 +121,7 @@ export default function Sidebar({ userEmail }: SidebarProps) {
   }, [])
 
   const filteredPrds = prds.filter((p) =>
-    p.title.toLowerCase().includes(searchQuery.toLowerCase())
+    p.title.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
   )
   const grouped = groupByDate(filteredPrds)
 
@@ -203,14 +233,26 @@ export default function Sidebar({ userEmail }: SidebarProps) {
 
         {/* PRD List */}
         <nav className="flex-1 overflow-y-auto px-2 pb-2 scrollbar-thin">
-          {grouped.length === 0 && (
+          {isLoadingPrds ? (
+            <div className="px-3 py-4 space-y-4">
+              <div className="space-y-2">
+                <div className="w-16 h-3 bg-white/5 rounded-full animate-pulse" />
+                <div className="w-full h-7 bg-white/5 rounded-md animate-pulse" />
+                <div className="w-5/6 h-7 bg-white/5 rounded-md animate-pulse" />
+              </div>
+              <div className="space-y-2">
+                <div className="w-20 h-3 bg-white/5 rounded-full animate-pulse" />
+                <div className="w-4/5 h-7 bg-white/5 rounded-md animate-pulse" />
+              </div>
+            </div>
+          ) : grouped.length === 0 ? (
             <div className="px-3 py-8 text-center">
               <p className="text-xs text-[#7a726b]">
                 {searchQuery ? 'No results found' : 'No documents yet'}
               </p>
             </div>
-          )}
-          {grouped.map((group) => (
+          ) : (
+            grouped.map((group) => (
             <div key={group.label} className="mb-3">
               <p className="px-3 py-1.5 text-[10px] font-medium text-[#7a726b] uppercase tracking-wider">
                 {group.label}
@@ -232,7 +274,8 @@ export default function Sidebar({ userEmail }: SidebarProps) {
                 )
               })}
             </div>
-          ))}
+          ))
+          )}
         </nav>
 
         {/* User section */}

@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v2.0.1] - 2026-05-23
+### Fixed
+- Fixed missing React elements bug on language switch in `page.tsx` by using index as stable key for feature grid array.
+- Fixed cascading render warning in `LanguageContext.tsx` by deferring the initial state setting on hydration using `setTimeout`.
+- Resolved static analysis TypeScript error in `exportMd.ts` by explicitly silencing `@typescript-eslint/no-explicit-any` for LLM schema output.
+- Replaced the bright native scrollbars in Chrome/Edge with cross-browser subtle themed scrollbars in `globals.css` that match the app's dark aesthetic.
+- Removed the 'Powered by Groq' indicator from the landing page layout for a cleaner look.
+
 ## [v2.0.0] - 2026-05-23
 ### Changed
 - Restructured repository layout by relocating all files and directories from the `prd-generator` subdirectory directly to the workspace root directory (`d:\CODE\PRD-MAKER`) for easier workspace navigation and a cleaner development workflow.

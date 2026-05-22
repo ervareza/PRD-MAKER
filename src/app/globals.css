@@ -135,9 +135,16 @@ h1, h2, h3, h4 {
   outline-offset: 2px;
 }
 
-/* Scrollbar — subtle */
+/* Universal cross-browser scrollbar styling */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--ink-ghost) transparent;
+}
+
+/* WebKit (Chrome, Safari, Edge) */
 ::-webkit-scrollbar {
   width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -147,6 +154,21 @@ h1, h2, h3, h4 {
 ::-webkit-scrollbar-thumb {
   background: var(--ink-ghost);
   border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ink-secondary);
+}
+
+/* Explicit utility for elements with overflow */
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
 }
 
 /* Selection */
