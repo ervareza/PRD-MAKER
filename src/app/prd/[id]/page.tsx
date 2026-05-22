@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
 
@@ -40,27 +40,32 @@ export default function PrdViewPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [revisionPrompt, setRevisionPrompt] = useState('')
   const [isRevising, setIsRevising] = useState(false)
-
-  const fetchData = useCallback(async (showLoading = false) => {
-    if (showLoading) setIsLoading(true)
-    const { data: prdData } = await supabase.from('prds').select('*').eq('id', id).single()
-    const { data: versionData } = await supabase
-      .from('prd_versions')
-      .select('*')
-      .eq('prd_id', id)
-      .order('version_number', { ascending: true })
-
-    setPrd(prdData)
-    if (versionData && versionData.length > 0) {
-      setVersions(versionData)
-      setActiveVersion(versionData[versionData.length - 1].version_number)
-    }
-    setIsLoading(false)
-  }, [id, supabase])
+  const [refreshTrigger, setRefreshTrigger] = useState(0)
 
   useEffect(() => {
+    let isMounted = true
+    const fetchData = async () => {
+      const { data: prdData } = await supabase.from('prds').select('*').eq('id', id).single()
+      const { data: versionData } = await supabase
+        .from('prd_versions')
+        .select('*')
+        .eq('prd_id', id)
+        .order('version_number', { ascending: true })
+
+      if (isMounted) {
+        setPrd(prdData)
+        if (versionData && versionData.length > 0) {
+          setVersions(versionData)
+          setActiveVersion(versionData[versionData.length - 1].version_number)
+        }
+        setIsLoading(false)
+      }
+    }
     fetchData()
-  }, [fetchData])
+    return () => {
+      isMounted = false
+    }
+  }, [id, supabase, refreshTrigger])
 
   const handleRevise = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -76,7 +81,8 @@ export default function PrdViewPage() {
       })
       if (res.ok) {
         setRevisionPrompt('')
-        await fetchData(true)
+        setIsLoading(true)
+        setRefreshTrigger((prev) => prev + 1)
       }
     } catch (err) {
       console.error(err)

@@ -361,7 +361,7 @@ export default function Home() {
             <div className="pt-2 flex flex-col sm:flex-row gap-4 justify-center sm:justify-start">
               <Link
                 href="/login"
-                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-accent hover:bg-accent-hover text-white rounded-md font-semibold text-sm transition-all shadow-sm hover:translate-y-[-1px]"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-accent hover:bg-accent-hover text-white rounded-md font-semibold text-sm transition-all shadow-sm hover:-translate-y-px"
               >
                 {t('landing.getStarted')}
                 <svg width="14" height="14" viewBox="0 0 16 16" fill="none" className="translate-y-[0.5px]">
@@ -415,7 +415,7 @@ export default function Home() {
               {/* Main Workspace Frame */}
               <div className="flex-1 flex overflow-hidden bg-surface-0 min-h-0">
                 {/* Mock Minimal Sidebar */}
-                <div className="w-[180px] bg-surface-1 border-r border-border/80 p-3 flex flex-col justify-between shrink-0 hidden sm:flex select-none">
+                <div className="w-[180px] bg-surface-1 border-r border-border/80 p-3 flex-col justify-between shrink-0 hidden sm:flex select-none">
                   <div className="space-y-4">
                     <div className="bg-surface-raised border border-border-subtle rounded-md px-2 py-1.5 text-xs text-ink-secondary flex items-center gap-1.5">
                       <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -663,7 +663,7 @@ export default function Home() {
             variants={stagger}
             className="grid grid-cols-1 md:grid-cols-3 gap-8"
           >
-            {features.map((f, i) => (
+            {features.map((f) => (
               <motion.div
                 key={f.title}
                 variants={fadeUp}
@@ -704,13 +704,13 @@ export default function Home() {
             variants={stagger}
             className="grid grid-cols-1 md:grid-cols-3 gap-8"
           >
-            {steps.map((s, i) => (
+            {steps.map((s) => (
               <motion.div key={s.step} variants={fadeUp} transition={{ duration: 0.5 }} className="space-y-4 relative">
                 <div className="flex items-center gap-3">
                   <span className="font-mono text-xs font-bold text-accent bg-accent-subtle px-2 py-0.5 rounded">
                     {s.step}
                   </span>
-                  <div className="h-[1px] bg-border flex-1 hidden md:block" />
+                  <div className="h-px bg-border flex-1 hidden md:block" />
                 </div>
                 <div className="space-y-2">
                   <h3 className="font-display text-xl font-bold text-ink">{s.title}</h3>
@@ -738,7 +738,7 @@ export default function Home() {
           <div>
             <Link
               href="/login"
-              className="inline-flex items-center gap-2 px-8 py-4 bg-accent hover:bg-accent-hover text-white rounded-md font-semibold text-sm transition-all shadow hover:translate-y-[-1px]"
+              className="inline-flex items-center gap-2 px-8 py-4 bg-accent hover:bg-accent-hover text-white rounded-md font-semibold text-sm transition-all shadow hover:-translate-y-px"
             >
               {t('landing.getStarted')}
               <svg width="14" height="14" viewBox="0 0 16 16" fill="none">

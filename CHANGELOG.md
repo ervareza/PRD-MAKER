@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v1.1.1] - 2026-05-22
+### Fixed
+- Synced state loading inside React `useEffect` in `prd/[id]/page.tsx` using a self-contained `fetchData` logic combined with a `refreshTrigger` state to resolve the cascading renders static analysis error completely.
+- Removed unused imports (`useCallback`, `useEffect`) from `src/components/Sidebar.tsx` and `src/app/login/page.tsx` to eliminate code smell and clean up linter warnings.
+- Cleaned up multiple Tailwind CSS utility warnings on `src/app/page.tsx` (using standard `hover:-translate-y-px`, fixing layout conflicts on hidden/flex classes, and migrating from `h-[1px]` to `h-px`).
+- Avoided unused map variables (`i`) in `src/app/page.tsx` loops.
+
 ## [v1.1.0] - 2026-05-22
 ### Added
 - Fully redesigned high-fidelity, highly aesthetic bilingual landing page following the Warm Restraint design system (Source Serif 4 display headings, DM Sans body text, oklch terracotta/rust signature accent).

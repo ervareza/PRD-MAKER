@@ -8,6 +8,28 @@ export default function ChangelogPage() {
 
   const releases = [
     {
+      version: 'v1.1.1',
+      date: '2026-05-22',
+      added: {
+        en: [],
+        id: []
+      },
+      fixed: {
+        en: [
+          'Synced state loading inside React useEffect in prd/[id]/page.tsx using a self-contained fetchData logic combined with a refreshTrigger state to resolve the cascading renders static analysis error completely.',
+          'Removed unused imports (useCallback, useEffect) from src/components/Sidebar.tsx and src/app/login/page.tsx to eliminate code smell and clean up linter warnings.',
+          'Cleaned up multiple Tailwind CSS utility warnings on src/app/page.tsx (using standard hover:-translate-y-px, fixing layout conflicts on hidden/flex classes, and migrating from h-[1px] to h-px).',
+          'Avoided unused map variables (i) in src/app/page.tsx loops.'
+        ],
+        id: [
+          'Sinkronisasi pemuatan status di dalam hook useEffect React pada prd/[id]/page.tsx menggunakan logika fetchData terenkapsulasi yang dipadukan dengan status refreshTrigger untuk sepenuhnya menyelesaikan kesalahan analisis statik cascading renders.',
+          'Penghapusan impor yang tidak digunakan (useCallback, useEffect) dari src/components/Sidebar.tsx dan src/app/login/page.tsx untuk menghilangkan bau kode dan merapikan peringatan linter.',
+          'Pembersihan beberapa peringatan utilitas Tailwind CSS pada src/app/page.tsx (menggunakan hover:-translate-y-px standar, memperbaiki konflik tata letak kelas hidden/flex, dan memigrasikan h-[1px] ke h-px).',
+          'Penghindaran variabel pemetaan yang tidak digunakan (i) di dalam perulangan src/app/page.tsx.'
+        ]
+      }
+    },
+    {
       version: 'v1.1.0',
       date: '2026-05-22',
       added: {
