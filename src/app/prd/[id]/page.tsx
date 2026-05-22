@@ -140,8 +140,8 @@ function priorityVariant(p?: string): string {
 
 function Bullet({ children }: { children: React.ReactNode }) {
   return (
-    <li className="flex items-baseline gap-2.5 text-sm text-ink-secondary leading-relaxed">
-      <span className="w-1 h-1 bg-accent rounded-full shrink-0 translate-y-2" />
+    <li className="flex items-start gap-2.5 text-sm text-ink-secondary leading-relaxed">
+      <span className="w-1.5 h-1.5 bg-accent rounded-full shrink-0 mt-[7px]" />
       <span>{children}</span>
     </li>
   )
