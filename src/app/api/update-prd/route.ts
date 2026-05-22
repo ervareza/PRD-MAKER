@@ -3,6 +3,25 @@ import { createClient } from '@/utils/supabase/server'
 
 export const maxDuration = 60
 
+const PRD_SCHEMA = `{
+  "executiveSummary": "...",
+  "problemStatement": { "description": "...", "painPoints": [...], "currentAlternatives": "...", "marketGap": "..." },
+  "goals": { "businessGoals": [...], "userGoals": [...], "nonGoals": [...] },
+  "targetAudience": { "primaryAudience": "...", "secondaryAudience": "...", "marketSize": "..." },
+  "userPersonas": [{ "name": "...", "role": "...", "age": "...", "description": "...", "goals": [...], "frustrations": [...], "technicalProficiency": "Low|Medium|High", "quote": "..." }],
+  "userStories": [{ "persona": "...", "story": "As a [role], I want [action] so that [benefit].", "acceptanceCriteria": [...], "priority": "Must Have|Should Have|Could Have|Won't Have" }],
+  "coreFeatures": [{ "feature": "...", "description": "...", "userBenefit": "...", "acceptanceCriteria": [...], "priority": "Must Have|Should Have|Could Have", "complexity": "Low|Medium|High", "estimatedEffort": "..." }],
+  "userFlows": [{ "name": "...", "steps": [...], "happyPath": "...", "edgeCases": [...] }],
+  "informationArchitecture": { "siteMap": [...], "navigationModel": "...", "keyScreens": [...] },
+  "nonFunctionalRequirements": { "performance": [...], "security": [...], "scalability": [...], "accessibility": [...], "reliability": [...], "compliance": [...] },
+  "techStackRecommendation": { "frontend": { "technology": "...", "reasoning": "..." }, "backend": { "technology": "...", "reasoning": "..." }, "database": { "technology": "...", "reasoning": "..." }, "infrastructure": { "technology": "...", "reasoning": "..." }, "thirdPartyServices": [{ "service": "...", "purpose": "..." }], "architecturePattern": "..." },
+  "dataModel": [{ "entity": "...", "fields": [...], "relationships": [...] }],
+  "milestones": [{ "phase": "...", "duration": "...", "deliverables": [...], "successMetrics": [...] }],
+  "successMetrics": { "northStarMetric": "...", "primaryKPIs": [{ "metric": "...", "target": "...", "measurement": "..." }], "secondaryKPIs": [{ "metric": "...", "target": "...", "measurement": "..." }] },
+  "risksAndMitigations": [{ "risk": "...", "impact": "High|Medium|Low", "likelihood": "High|Medium|Low", "mitigation": "..." }],
+  "openQuestions": [...]
+}`
+
 export async function POST(req: Request) {
   try {
     const { prdId, revisionPrompt, previousContent } = await req.json()
@@ -14,16 +33,17 @@ export async function POST(req: Request) {
     const { data: prd, error: prdError } = await supabase.from('prds').select('*').eq('id', prdId).single()
     if (prdError || prd.user_id !== user.id) return NextResponse.json({ error: 'Unauthorized or PRD not found' }, { status: 401 })
 
-    const systemPrompt = `You are an expert Product Manager. You are revising an existing Product Requirements Document (PRD).
-Format the output as a valid JSON object with the following keys:
-{
-  "executiveSummary": "...",
-  "userPersonas": [{ "name": "...", "description": "...", "needs": "..." }],
-  "coreFeatures": [{ "feature": "...", "description": "...", "priority": "High|Medium|Low" }],
-  "nonFunctionalRequirements": ["...", "..."],
-  "techStackRecommendation": { "frontend": "...", "backend": "...", "database": "...", "reasoning": "..." }
-}
-Respond with ONLY the JSON object, no markdown code blocks, no other text.`
+    const systemPrompt = `You are an elite Principal Product Manager revising an existing Product Requirements Document (PRD).
+
+Apply the user's revision request to the existing PRD content. Maintain the same comprehensive structure and level of detail. Preserve all sections — only modify what the revision request asks for. Keep unchanged sections intact. If the revision request implies adding new features, personas, or details, integrate them naturally.
+
+Format the output as a valid JSON object matching this exact schema:
+${PRD_SCHEMA}
+
+RULES:
+- Preserve all existing content that is NOT affected by the revision.
+- When adding or modifying, maintain the same level of depth and detail.
+- Respond with ONLY the JSON object, no markdown code blocks, no other text.`
 
     const userPrompt = `Previous PRD Content: ${JSON.stringify(previousContent)}\n\nRevision Request: ${revisionPrompt}\n\nPlease generate the updated PRD JSON.`
 
@@ -44,7 +64,7 @@ Respond with ONLY the JSON object, no markdown code blocks, no other text.`
           { role: 'user', content: userPrompt },
         ],
         temperature: 0.7,
-        max_completion_tokens: 4096,
+        max_completion_tokens: 8192,
         response_format: { type: 'json_object' },
       }),
     })
