@@ -386,7 +386,7 @@ export default function Home() {
                     <rect x="2" y="4" width="8" height="6" rx="1" stroke="currentColor" strokeWidth="1.5" />
                     <path d="M4 4V3a2 2 0 114 0v1" stroke="currentColor" strokeWidth="1.5" />
                   </svg>
-                  generator.prd/project/alora
+                  prd.ervareza.tech/prd/alora
                 </div>
                 <div className="flex gap-1 items-center">
                   {isAutoPlaying && (
@@ -419,7 +419,7 @@ export default function Home() {
                     </div>
                     <div className="space-y-1">
                       <p className="text-[9px] uppercase tracking-wider font-semibold font-mono px-1" style={{ color: '#4a433d' }}>{language === 'en' ? 'Today' : 'Hari Ini'}</p>
-                      <div className="p-1.5 rounded-lg flex items-center justify-between text-[11px] font-semibold" style={{ background: 'rgba(255,255,255,0.10)', color: '#ede8e3', boxShadow: 'inset 2px 0 0 var(--accent)' }}>
+                      <div className="p-1.5 rounded-lg flex items-center justify-between text-[11px] font-semibold" style={{ background: 'rgba(255,255,255,0.10)', color: '#ede8e3' }}>
                         <span className="truncate">Alora Marketplace</span>
                         <span className="text-[8px] font-mono px-1 rounded" style={{ background: 'var(--accent-subtle)', color: 'var(--accent)' }}>v{activeVersion}</span>
                       </div>
@@ -604,43 +604,35 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Sticky Prompt / Revision Bar inside Mockup */}
-              <div className="shrink-0 border-t border-border bg-surface-raised p-3 relative z-10">
-                <div className="flex gap-2">
-                  <div className="flex-1 relative flex items-center">
-                    <input
-                      type="text"
-                      readOnly
-                      value={typedPrompt}
-                      placeholder={language === 'en' ? "Request revisions... e.g. Focus on offline capabilities" : "Minta revisi... misal: Fokus pada kapabilitas luring"}
-                      className="w-full bg-surface-0 border border-border rounded pl-3 pr-8 py-1.5 text-xs text-ink placeholder-ink-ghost focus:outline-none"
-                    />
-                    {typedPrompt && !isRevising && (
-                      <span className="absolute right-2 text-ink-ghost font-mono text-[9px] animate-pulse">⏎</span>
-                    )}
-                  </div>
-                  <button 
-                    disabled
-                    className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-accent text-white rounded font-medium text-xs shrink-0"
-                  >
-                    {isRevising ? (
-                      <svg className="w-3.5 h-3.5 animate-spin text-white" viewBox="0 0 16 16" fill="none">
+              {/* Floating Revision Bar — pill shape matching real app */}
+              <div className="shrink-0 px-3 pb-3 pt-2 bg-gradient-to-t from-surface-0 via-surface-0/90 to-transparent relative z-10">
+                <div 
+                  className="relative flex items-end rounded-[24px] transition-shadow duration-200"
+                  style={{ background: 'var(--surface-raised)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-lg)' }}
+                >
+                  <input
+                    type="text"
+                    readOnly
+                    value={typedPrompt}
+                    placeholder={language === 'en' ? "Ask anything or request revisions..." : "Tanya apa saja atau minta revisi..."}
+                    className="flex-1 bg-transparent border-0 text-ink placeholder-ink-ghost pl-5 pr-12 py-3 text-xs focus:outline-none"
+                  />
+                  {isRevising ? (
+                    <div className="absolute right-2 bottom-2 w-7 h-7 flex items-center justify-center rounded-full" style={{ background: 'var(--ink)' }}>
+                      <svg className="w-3 h-3 animate-spin text-surface-0" viewBox="0 0 16 16" fill="none">
                         <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="2" opacity="0.3" />
                         <path d="M14 8a6 6 0 00-6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                       </svg>
-                    ) : (
-                      <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M14 2L7 13l-2-4-4-2 13-5z" />
+                    </div>
+                  ) : (
+                    <div className={`absolute right-2 bottom-2 w-7 h-7 flex items-center justify-center rounded-full transition-colors ${typedPrompt ? 'bg-accent' : 'bg-accent/40'}`}>
+                      <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M7 13V1M1 7l6-6 6 6" />
                       </svg>
-                    )}
-                    <span className="hidden xs:inline">
-                      {isRevising 
-                        ? (language === 'en' ? 'Generating...' : 'Membuat...') 
-                        : (language === 'en' ? `v${activeVersion + 1}` : `v${activeVersion + 1}`)
-                      }
-                    </span>
-                  </button>
+                    </div>
+                  )}
                 </div>
+                <p className="text-[9px] text-ink-ghost mt-2 text-center">PRD Maker can make mistakes. Check important info.</p>
               </div>
             </div>
           </div>
