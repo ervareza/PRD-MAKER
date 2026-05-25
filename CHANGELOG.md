@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v2.2.0] - 2026-05-25
+### Added
+- Full README.md with badges, features, tech stack, project structure, setup guide, deployment instructions, design system notes, and security section.
+- MIT License file.
+- `.agents/` added to `.gitignore` and untracked from git history.
+- OS-aware keyboard shortcut label in sidebar search (⌘K on macOS, Ctrl+K on Windows/Linux).
+- `aria-label="Delete document"` on PRD delete button for accessibility.
+- Header action buttons (ToC, Export, Print, Delete, version selector) are now disabled during AI revision.
+
+### Fixed
+- **[CRITICAL]** Gemini API key moved from URL query parameter to `x-goog-api-key` HTTP header in both `generate-prd` and `update-prd` routes to prevent key leaking in server/proxy logs.
+- **[CRITICAL]** Removed dead `revisionPrompt` state left over from FloatingChatBar component extraction.
+- **[HIGH]** Fixed double nested scroll containers (AppShell + PRD page) that caused unreachable content and unpredictable scrolling.
+- **[HIGH]** Replaced `catch(err: any)` with proper `catch(err: unknown)` and type narrowing for AbortError detection.
+- **[HIGH]** Added `Array.isArray()` guards to 15+ `.map()` calls on AI-generated data to prevent runtime crashes when AI returns non-array values (painPoints, goals, acceptanceCriteria, userFlows.steps, edgeCases, requestParams, requestBody, responseCodes).
+- **[MEDIUM]** Revision overlay changed from `absolute` to `fixed` positioning so it covers the full viewport regardless of content height.
+- **[MEDIUM]** Removed broken `/terms` link on login page (page doesn't exist).
+- **[LOW]** Removed redundant ternary `isGenerating ? 'var(--accent)' : 'var(--accent)'` in new PRD page.
+- **[LOW]** Replaced `Math.random()` with `crypto.randomUUID()` for Mermaid diagram render IDs.
+- **[LOW]** Added prominent warning comment to dev-only seed-test-prd route.
+- Removed global `:focus-visible` outline override from `globals.css`.
+
+### Security
+- Full 18-issue code audit completed (2 CRITICAL, 4 HIGH, 6 MEDIUM, 6 LOW).
+- API keys no longer appear in any URL — all passed via HTTP headers.
+- `.agents/` directory removed from git tracking.
+
 ## [v2.1.0] - 2026-05-25
 ### Added
 - Auth error page (`/auth/auth-code-error`) — users no longer see 404 on failed OAuth login.

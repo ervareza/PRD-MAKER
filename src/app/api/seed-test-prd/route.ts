@@ -2,9 +2,11 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 
 /**
- * DEV-ONLY: Seeds a comprehensive test PRD with all advanced fields.
+ * ⚠️  DEV-ONLY: Seeds a comprehensive test PRD with all advanced fields.
  * Navigate to /api/seed-test-prd to create the test data.
- * Delete this file before deploying to production.
+ * 
+ * WARNING: This file MUST be deleted or excluded before deploying to production.
+ * It is guarded by NODE_ENV but should not exist in production bundles.
  */
 export async function GET() {
   // DEV-ONLY: Block this route in production

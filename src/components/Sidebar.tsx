@@ -62,6 +62,19 @@ export default function Sidebar({ userEmail }: SidebarProps) {
   const [showLogout, setShowLogout] = useState(false)
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [isLoadingPrds, setIsLoadingPrds] = useState(true)
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
+  const userMenuRef = useRef<HTMLDivElement>(null)
+
+  // Handle click outside user menu
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setIsUserMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   // Debounce search
   useEffect(() => {
@@ -162,9 +175,9 @@ export default function Sidebar({ userEmail }: SidebarProps) {
   if (isCollapsed) {
     return (
       <aside className="w-14 bg-[#1a1714] flex flex-col items-center py-3 gap-2 shrink-0">
-        <button
+      <button
           onClick={() => setIsCollapsed(false)}
-          className="w-9 h-9 flex items-center justify-center rounded-md text-[#a89f97] hover:text-[#ede8e3] hover:bg-white/6 transition-colors"
+          className="w-9 h-9 flex items-center justify-center rounded-lg text-[#a89f97] hover:text-[#ede8e3] hover:bg-white/8 transition-all duration-200"
           title="Expand sidebar"
         >
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -173,7 +186,7 @@ export default function Sidebar({ userEmail }: SidebarProps) {
         </button>
         <Link
           href="/prd/new"
-          className="w-9 h-9 flex items-center justify-center rounded-md text-[#a89f97] hover:text-[#ede8e3] hover:bg-white/6 transition-colors"
+          className="w-9 h-9 flex items-center justify-center rounded-lg text-[#a89f97] hover:text-[#ede8e3] hover:bg-white/8 transition-all duration-200"
           title="New PRD"
         >
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
@@ -186,12 +199,12 @@ export default function Sidebar({ userEmail }: SidebarProps) {
 
   return (
     <>
-      <aside className="w-64 bg-[#1a1714] flex flex-col shrink-0 select-none">
+      <aside className="w-64 bg-[#171411] flex flex-col shrink-0 select-none" style={{ borderRight: '1px solid rgba(255,255,255,0.06)' }}>
         {/* Top bar */}
         <div className="flex items-center justify-between px-3 pt-3 pb-1">
           <button
             onClick={() => setIsCollapsed(true)}
-            className="w-9 h-9 flex items-center justify-center rounded-md text-[#a89f97] hover:text-[#ede8e3] hover:bg-white/6 transition-colors"
+            className="w-9 h-9 flex items-center justify-center rounded-lg text-[#a89f97] hover:text-[#ede8e3] hover:bg-white/8 transition-all duration-200"
             title="Collapse sidebar"
           >
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -200,12 +213,28 @@ export default function Sidebar({ userEmail }: SidebarProps) {
           </button>
           <Link
             href="/prd/new"
-            className="w-9 h-9 flex items-center justify-center rounded-md text-[#a89f97] hover:text-[#ede8e3] hover:bg-white/6 transition-colors"
+            className="w-9 h-9 flex items-center justify-center rounded-lg text-[#a89f97] hover:text-[#ede8e3] hover:bg-white/8 transition-all duration-200"
             title="New PRD"
           >
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
               <path d="M9 3v12M3 9h12" />
             </svg>
+          </Link>
+        </div>
+
+        {/* Dashboard link */}
+        <div className="px-3 pb-1">
+          <Link
+            href="/dashboard"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-[#a89f97] hover:text-[#ede8e3] hover:bg-white/8 transition-all duration-200"
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="1" y="1" width="5" height="5" rx="1" />
+              <rect x="8" y="1" width="5" height="5" rx="1" />
+              <rect x="1" y="8" width="5" height="5" rx="1" />
+              <rect x="8" y="8" width="5" height="5" rx="1" />
+            </svg>
+            All Documents
           </Link>
         </div>
 
@@ -231,11 +260,11 @@ export default function Sidebar({ userEmail }: SidebarProps) {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search…"
-              className="w-full bg-white/6 border-0 rounded-md pl-8 pr-3 py-1.5 text-xs text-[#ede8e3] placeholder-[#7a726b] focus:outline-none focus:ring-1 focus:ring-white/20"
+              className="w-full bg-white/6 border-0 rounded-lg pl-8 pr-3 py-2 text-xs text-[#ede8e3] placeholder-[#5a524b] focus:outline-none focus:ring-1 focus:ring-white/20 transition-all duration-200"
             />
             {!searchQuery && (
               <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-[#4a433d] font-mono pointer-events-none">
-                ⌘K
+                {typeof navigator !== 'undefined' && /Mac|iPod|iPhone|iPad/.test(navigator.userAgent) ? '⌘K' : 'Ctrl+K'}
               </kbd>
             )}
           </div>
@@ -273,7 +302,7 @@ export default function Sidebar({ userEmail }: SidebarProps) {
                   <Link
                     key={prd.id}
                     href={`/prd/${prd.id}`}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm truncate transition-colors ${
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm truncate transition-all duration-200 ${
                       isActive
                         ? 'bg-white/10 text-[#ede8e3]'
                         : 'text-[#a89f97] hover:bg-white/6 hover:text-[#ede8e3]'
@@ -289,33 +318,36 @@ export default function Sidebar({ userEmail }: SidebarProps) {
         </nav>
 
         {/* User section */}
-        <div className="border-t border-white/8 p-2">
-          <div className="flex items-center gap-2.5 px-3 py-2 rounded-md hover:bg-white/6 transition-colors cursor-default">
-            <div className="w-7 h-7 rounded-full bg-accent/30 flex items-center justify-center text-xs font-semibold text-accent-ink uppercase shrink-0">
-              {userEmail.charAt(0)}
+        <div className="p-2 relative mt-auto border-t border-white/8" ref={userMenuRef}>
+          {isUserMenuOpen && (
+            <div className="absolute bottom-[calc(100%+4px)] left-2 right-2 bg-[#1a1714] border border-white/8 rounded-xl shadow-xl overflow-hidden py-1.5 z-50">
+              <Link href="/changelog" onClick={() => setIsUserMenuOpen(false)} className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-[#a89f97] hover:text-[#ede8e3] hover:bg-white/6 transition-colors text-left font-medium">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                Changelog
+              </Link>
+              <button onClick={() => { setIsUserMenuOpen(false); setShowLogout(true); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-[#a89f97] hover:text-red-400 hover:bg-white/6 transition-colors text-left font-medium">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                Log out
+              </button>
             </div>
-            <span className="text-xs text-[#a89f97] truncate flex-1">
-              {userEmail}
-            </span>
-          </div>
+          )}
+
           <button
-            onClick={() => setShowLogout(true)}
-            className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-[#7a726b] hover:text-red-400 hover:bg-white/6 rounded-md transition-colors font-medium"
+            onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+            className="w-full flex items-center gap-2.5 p-2 rounded-lg hover:bg-white/6 transition-colors"
           >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M6 14H3a1 1 0 01-1-1V3a1 1 0 011-1h3M11 11l3-3-3-3M6 8h8" />
-            </svg>
-            Log out
+            <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center text-[13px] font-semibold text-accent-ink shrink-0 uppercase">
+              {userEmail ? userEmail.charAt(0) : 'U'}
+            </div>
+            <div className="flex flex-col items-start overflow-hidden text-left leading-tight flex-1">
+              <span className="text-[13px] font-medium text-[#ede8e3] w-full truncate">
+                {userEmail ? userEmail.split('@')[0] : 'User'}
+              </span>
+              <span className="text-[11px] text-[#7a726b] w-full truncate mt-0.5">
+                {userEmail}
+              </span>
+            </div>
           </button>
-          <Link
-            href="/changelog"
-            className="w-full flex items-center gap-2.5 px-3 py-1.5 text-[11px] text-[#5a524b] hover:text-[#a89f97] rounded-md transition-colors font-mono"
-          >
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-              <path d="M6 1v10M1 6h10" />
-            </svg>
-            Changelog
-          </Link>
         </div>
       </aside>
 

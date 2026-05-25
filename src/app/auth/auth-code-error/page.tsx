@@ -4,9 +4,12 @@ import Link from 'next/link'
 
 export default function AuthCodeErrorPage() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center px-6 bg-surface-0">
-      <div className="w-full max-w-sm space-y-6 text-center">
-        <div className="w-14 h-14 mx-auto rounded-full bg-danger/10 flex items-center justify-center">
+    <div className="flex min-h-screen flex-col items-center justify-center px-6" style={{ background: 'var(--surface-0)' }}>
+      <div className="w-full max-w-sm space-y-6 text-center animate-fade-in-up">
+        <div
+          className="w-14 h-14 mx-auto rounded-2xl flex items-center justify-center"
+          style={{ background: 'oklch(0.55 0.15 25 / 0.1)' }}
+        >
           <svg
             width="24"
             height="24"
@@ -36,7 +39,11 @@ export default function AuthCodeErrorPage() {
         <div className="space-y-3">
           <Link
             href="/login"
-            className="block w-full px-4 py-3 bg-accent hover:bg-accent-hover text-white rounded-md font-semibold text-sm transition-colors text-center"
+            className="block w-full px-4 py-3.5 text-white rounded-lg font-semibold text-sm transition-all duration-200 text-center"
+            style={{
+              background: 'var(--accent)',
+              boxShadow: 'var(--shadow-sm)',
+            }}
           >
             Try Again
           </Link>

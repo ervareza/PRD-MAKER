@@ -408,39 +408,39 @@ export default function Home() {
 
               {/* Main Workspace Frame */}
               <div className="flex-1 flex overflow-hidden bg-surface-0 min-h-0">
-                {/* Mock Minimal Sidebar */}
-                <div className="w-[140px] sm:w-[180px] bg-surface-1 border-r border-border/80 p-3 flex flex-col justify-between shrink-0 select-none">
+                {/* Mock Minimal Sidebar — matches real app dark sidebar */}
+                <div className="w-[140px] sm:w-[180px] shrink-0 select-none p-3 flex flex-col justify-between" style={{ background: '#171411', borderRight: '1px solid rgba(255,255,255,0.06)' }}>
                   <div className="space-y-4">
-                    <div className="bg-surface-raised border border-border-subtle rounded-md px-2 py-1.5 text-xs text-ink-secondary flex items-center gap-1.5">
+                    <div className="rounded-lg px-2 py-1.5 text-xs flex items-center gap-1.5" style={{ background: 'rgba(255,255,255,0.06)', color: '#5a524b' }}>
                       <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
                         <circle cx="5" cy="5" r="3"/><path d="M10 10L7 7"/>
                       </svg>
-                      {language === 'en' ? 'Search docs...' : 'Cari dokumen...'}
+                      {language === 'en' ? 'Search...' : 'Cari...'}
                     </div>
                     <div className="space-y-1">
-                      <p className="text-[9px] uppercase tracking-wider font-semibold font-mono text-ink-ghost px-1">{language === 'en' ? 'Today' : 'Hari Ini'}</p>
-                      <div className="p-1.5 rounded bg-surface-raised border border-border-subtle flex items-center justify-between text-[11px] font-semibold text-ink">
+                      <p className="text-[9px] uppercase tracking-wider font-semibold font-mono px-1" style={{ color: '#4a433d' }}>{language === 'en' ? 'Today' : 'Hari Ini'}</p>
+                      <div className="p-1.5 rounded-lg flex items-center justify-between text-[11px] font-semibold" style={{ background: 'rgba(255,255,255,0.10)', color: '#ede8e3', boxShadow: 'inset 2px 0 0 var(--accent)' }}>
                         <span className="truncate">Alora Marketplace</span>
-                        <span className="text-[8px] font-mono bg-accent-subtle text-accent px-1 rounded">v{activeVersion}</span>
+                        <span className="text-[8px] font-mono px-1 rounded" style={{ background: 'var(--accent-subtle)', color: 'var(--accent)' }}>v{activeVersion}</span>
                       </div>
-                      <div className="p-1.5 rounded hover:bg-surface-raised/40 text-[11px] text-ink-secondary flex items-center justify-between">
+                      <div className="p-1.5 rounded-lg text-[11px] flex items-center justify-between" style={{ color: '#a89f97' }}>
                         <span className="truncate">AI Travel Assistant</span>
-                        <span className="text-[8px] font-mono bg-surface-2 text-ink-tertiary px-1 rounded">v1</span>
+                        <span className="text-[8px] font-mono px-1 rounded" style={{ background: 'rgba(255,255,255,0.06)', color: '#7a726b' }}>v1</span>
                       </div>
                     </div>
                     <div className="space-y-1">
-                      <p className="text-[9px] uppercase tracking-wider font-semibold font-mono text-ink-ghost px-1">{language === 'en' ? 'Yesterday' : 'Kemarin'}</p>
-                      <div className="p-1.5 rounded hover:bg-surface-raised/40 text-[11px] text-ink-secondary flex items-center">
+                      <p className="text-[9px] uppercase tracking-wider font-semibold font-mono px-1" style={{ color: '#4a433d' }}>{language === 'en' ? 'Yesterday' : 'Kemarin'}</p>
+                      <div className="p-1.5 rounded-lg text-[11px]" style={{ color: '#a89f97' }}>
                         <span className="truncate">Saas CRM Portal</span>
                       </div>
-                      <div className="p-1.5 rounded hover:bg-surface-raised/40 text-[11px] text-ink-secondary flex items-center">
+                      <div className="p-1.5 rounded-lg text-[11px]" style={{ color: '#a89f97' }}>
                         <span className="truncate">Fintech Ledger DB</span>
                       </div>
                     </div>
                   </div>
-                  <div className="border-t border-border-subtle pt-2 flex items-center gap-2">
-                    <div className="w-5 h-5 rounded-full bg-accent text-white font-semibold text-[10px] flex items-center justify-center font-mono">JD</div>
-                    <span className="text-[10px] text-ink-secondary font-medium truncate">Jane Doe</span>
+                  <div className="pt-2 flex items-center gap-2" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                    <div className="w-5 h-5 rounded-full font-semibold text-[10px] flex items-center justify-center font-mono" style={{ background: 'var(--accent)', color: 'white' }}>JD</div>
+                    <span className="text-[10px] font-medium truncate" style={{ color: '#a89f97' }}>Jane Doe</span>
                   </div>
                 </div>
 

@@ -27,7 +27,7 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "PRD Generator — AI-Powered Product Requirements",
   description:
-    "Transform project ideas into comprehensive, structured Product Requirements Documents. Powered by DeepSeek AI.",
+    "Transform project ideas into comprehensive, structured Product Requirements Documents. Powered by Gemini AI.",
 };
 
 export default function RootLayout({
@@ -39,8 +39,9 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${sourceSerif.variable} ${dmSans.variable} ${jetbrainsMono.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col bg-surface-0 text-ink">
+      <body className="min-h-full flex flex-col bg-surface-0 text-ink" suppressHydrationWarning>
         <LanguageProvider>{children}</LanguageProvider>
       </body>
     </html>

@@ -230,10 +230,13 @@ MERMAID DIAGRAM RULES:
     const model = process.env.GEMINI_MODEL || 'gemini-3.1-flash-lite'
 
     const aiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': apiKey,
+        },
         body: JSON.stringify({
           systemInstruction: {
             parts: [{ text: systemPrompt }],

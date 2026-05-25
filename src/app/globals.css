@@ -1,12 +1,18 @@
 @import "tailwindcss";
 
 /*
- * Design System — Huashu-Design informed
- * 
- * Philosophy: Warm restraint. One accent color (terracotta/rust).
- * Display serif for headings, clean sans for body.
- * No purple gradients, no emoji icons, no rounded-card-with-left-border.
- * Every element earns its place.
+ * Design System — Huashu-Design · Kenya Hara direction
+ *
+ * Philosophy: Warm restraint. One accent (terracotta/rust).
+ * Serif display for headings, clean sans for body.
+ * Every element earns its place. Anti-AI-slop.
+ *
+ * ┌─────────────────────────────────────────┐
+ * │  surface-0 → page bg                    │
+ * │  surface-1 → recessed / sidebar bg      │
+ * │  surface-2 → hover / pressed            │
+ * │  surface-raised → cards, inputs, modals │
+ * └─────────────────────────────────────────┘
  */
 
 :root {
@@ -18,22 +24,29 @@
 
   /* Ink — warm charcoal, not pure black */
   --ink: #1a1714;
-  --ink-secondary: #6b6460;
-  --ink-tertiary: #9e9590;
-  --ink-ghost: #c8c1ba;
+  --ink-secondary: #5c5650;
+  --ink-tertiary: #8f8880;
+  --ink-ghost: #c0b8b0;
 
   /* Accent — single terracotta/rust, signature color */
   --accent: oklch(0.55 0.14 28);
   --accent-hover: oklch(0.50 0.16 28);
-  --accent-subtle: oklch(0.92 0.04 28);
+  --accent-subtle: oklch(0.94 0.03 28);
   --accent-ink: #fff;
 
   /* Semantic */
-  --border: #e0dad4;
+  --border: #ddd6ce;
   --border-subtle: #ece7e1;
   --success: oklch(0.55 0.12 155);
   --warning: oklch(0.65 0.14 70);
   --danger: oklch(0.55 0.15 25);
+
+  /* Elevation — layered shadows for depth */
+  --shadow-xs: 0 1px 2px rgba(26, 23, 20, 0.04);
+  --shadow-sm: 0 1px 3px rgba(26, 23, 20, 0.06), 0 1px 2px rgba(26, 23, 20, 0.04);
+  --shadow-md: 0 4px 12px rgba(26, 23, 20, 0.06), 0 1px 3px rgba(26, 23, 20, 0.04);
+  --shadow-lg: 0 8px 24px rgba(26, 23, 20, 0.08), 0 2px 8px rgba(26, 23, 20, 0.04);
+  --shadow-xl: 0 16px 48px rgba(26, 23, 20, 0.10), 0 4px 16px rgba(26, 23, 20, 0.06);
 
   /* Typography */
   --font-display: "Source Serif 4", "Georgia", serif;
@@ -50,18 +63,25 @@
   --space-3xl: 6rem;
 
   /* Radius — subtle, not bubbly */
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+
+  /* Timing */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-fast: 150ms;
+  --duration-normal: 250ms;
+  --duration-slow: 400ms;
 }
 
-/* Dark mode — not cyber-neon #0D1117, warm dark */
+/* Dark mode — warm dark, not GitHub #0D1117 */
 @media (prefers-color-scheme: dark) {
   :root {
-    --surface-0: #151210;
-    --surface-1: #1e1a17;
-    --surface-2: #2a2521;
-    --surface-raised: #1e1a17;
+    --surface-0: #141210;
+    --surface-1: #1c1916;
+    --surface-2: #28231f;
+    --surface-raised: #1e1b18;
     --ink: #ede8e3;
     --ink-secondary: #a89f97;
     --ink-tertiary: #7a726b;
@@ -69,11 +89,18 @@
     --accent: oklch(0.65 0.14 28);
     --accent-hover: oklch(0.60 0.16 28);
     --accent-subtle: oklch(0.22 0.04 28);
-    --border: #332e2a;
-    --border-subtle: #272320;
+    --border: #302b27;
+    --border-subtle: #252220;
+
+    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.20);
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.24), 0 1px 2px rgba(0, 0, 0, 0.16);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.28), 0 1px 3px rgba(0, 0, 0, 0.16);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.32), 0 2px 8px rgba(0, 0, 0, 0.20);
+    --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.36), 0 4px 16px rgba(0, 0, 0, 0.24);
   }
 }
 
+/* ── Tailwind v4 theme registration ────────────────────────────── */
 @theme inline {
   --color-surface-0: var(--surface-0);
   --color-surface-1: var(--surface-1);
@@ -98,9 +125,14 @@
   --radius-sm: var(--radius-sm);
   --radius-md: var(--radius-md);
   --radius-lg: var(--radius-lg);
+  --shadow-xs: var(--shadow-xs);
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-xl: var(--shadow-xl);
 }
 
-/* Base typography */
+/* ── Base typography ───────────────────────────────────────────── */
 body {
   background: var(--surface-0);
   color: var(--ink);
@@ -113,38 +145,107 @@ body {
 h1, h2, h3, h4 {
   font-family: var(--font-display);
   font-weight: 600;
-  letter-spacing: -0.02em;
-  line-height: 1.2;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
 }
 
-/* Print styles for PDF export — Tailwind v4 handles print:hidden natively */
+/* ── Premium input styling ─────────────────────────────────────── */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="search"],
+input[type="url"],
+textarea,
+select {
+  transition: border-color var(--duration-normal) var(--ease-out),
+              box-shadow var(--duration-normal) var(--ease-out),
+              background-color var(--duration-fast) var(--ease-out);
+}
+
+/* ── Keyframe animations ───────────────────────────────────────── */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* ── Utility classes ───────────────────────────────────────────── */
+@layer utilities {
+  .animate-fade-in-up {
+    animation: fade-in-up var(--duration-slow) var(--ease-out) both;
+  }
+  .animate-fade-in {
+    animation: fade-in var(--duration-normal) var(--ease-out) both;
+  }
+  .animate-scale-in {
+    animation: scale-in var(--duration-normal) var(--ease-out) both;
+  }
+  .animation-delay-100 {
+    animation-delay: 100ms;
+  }
+  .animation-delay-200 {
+    animation-delay: 200ms;
+  }
+  .animation-delay-300 {
+    animation-delay: 300ms;
+  }
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+}
+
+/* ── Print styles ──────────────────────────────────────────────── */
 @media print {
   .print-hidden {
     display: none !important;
   }
-
   body {
     background: white !important;
     color: #1a1714 !important;
   }
 }
 
-/* Smooth focus rings — not the browser default blue */
-:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
 
-/* Universal cross-browser scrollbar styling */
+
+/* ── Scrollbar — thin & warm ───────────────────────────────────── */
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--ink-ghost) transparent;
 }
 
-/* WebKit (Chrome, Safari, Edge) */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
@@ -157,21 +258,10 @@ h1, h2, h3, h4 {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--ink-secondary);
+  background: var(--ink-tertiary);
 }
 
-/* Explicit utility for elements with overflow */
-@layer utilities {
-  .scrollbar-thin {
-    scrollbar-width: thin;
-  }
-  .scrollbar-thin::-webkit-scrollbar {
-    width: 4px;
-    height: 4px;
-  }
-}
-
-/* Selection */
+/* ── Selection ─────────────────────────────────────────────────── */
 ::selection {
   background: var(--accent-subtle);
   color: var(--ink);

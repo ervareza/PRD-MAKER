@@ -50,18 +50,38 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center px-6 bg-surface-0">
-      <div className="w-full max-w-sm space-y-6">
+    <div className="flex min-h-screen flex-col items-center justify-center px-6" style={{ background: 'var(--surface-0)' }}>
+      <div className="w-full max-w-sm space-y-8 animate-fade-in-up">
         {/* Brand */}
-        <div className="text-center space-y-2">
-          <h1 className="font-display text-2xl font-bold tracking-tight text-ink">
-            PRD Generator
-          </h1>
-          <p className="text-sm text-ink-tertiary">{t('auth.tagline')}</p>
+        <div className="text-center space-y-3">
+          <div
+            className="w-12 h-12 rounded-xl mx-auto flex items-center justify-center"
+            style={{ background: 'var(--accent)', boxShadow: 'var(--shadow-md)' }}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+              <polyline points="14,2 14,8 20,8" />
+              <line x1="16" y1="13" x2="8" y2="13" />
+              <line x1="16" y1="17" x2="8" y2="17" />
+            </svg>
+          </div>
+          <div>
+            <h1 className="font-display text-2xl font-bold tracking-tight text-ink">
+              PRD Generator
+            </h1>
+            <p className="text-sm text-ink-tertiary mt-1">{t('auth.tagline')}</p>
+          </div>
         </div>
 
         {/* Login Card */}
-        <div className="bg-surface-raised border border-border rounded-lg p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)] space-y-4">
+        <div
+          className="rounded-xl p-6 space-y-4"
+          style={{
+            background: 'var(--surface-raised)',
+            border: '1px solid var(--border-subtle)',
+            boxShadow: 'var(--shadow-lg)',
+          }}
+        >
           {/* Recent accounts */}
           {recentAccounts.length > 0 && (
             <div className="space-y-2">
@@ -69,29 +89,51 @@ export default function LoginPage() {
                 Recent accounts
               </p>
               {recentAccounts.map((email) => (
-                <div key={email} className="flex items-center gap-3">
+                <div key={email} className="flex items-center gap-2">
                   <button
                     onClick={() => handleGoogleLogin(email)}
                     disabled={isLoading}
-                    className="flex-1 flex items-center gap-3 py-2.5 px-3 border border-border rounded-md bg-surface-0 hover:bg-surface-1 transition-colors text-left disabled:opacity-50"
+                    className="flex-1 flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm text-ink transition-all duration-200 text-left"
+                    style={{
+                      background: 'var(--surface-1)',
+                      border: '1px solid var(--border-subtle)',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = 'var(--accent)'
+                      e.currentTarget.style.boxShadow = 'var(--shadow-sm)'
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = 'var(--border-subtle)'
+                      e.currentTarget.style.boxShadow = 'none'
+                    }}
                   >
-                    <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center text-xs font-semibold text-accent uppercase shrink-0">
+                    <div
+                      className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold uppercase shrink-0"
+                      style={{ background: 'var(--accent-subtle)', color: 'var(--accent)' }}
+                    >
                       {email.charAt(0)}
                     </div>
-                    <span className="text-sm text-ink truncate">{email}</span>
+                    <span className="truncate">{email}</span>
                   </button>
                   <button
                     onClick={() => removeAccount(email)}
-                    className="w-8 h-8 flex items-center justify-center text-ink-ghost hover:text-danger rounded-md hover:bg-surface-1 transition-colors shrink-0"
+                    className="p-1.5 rounded-md text-ink-ghost hover:text-danger hover:bg-danger/5 transition-colors shrink-0"
                     title="Remove"
                   >
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-                      <path d="M3 3l8 8M11 3l-8 8" />
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                      <path d="M4 4l8 8M12 4l-8 8" />
                     </svg>
                   </button>
                 </div>
               ))}
-              <div className="border-t border-border-subtle my-3" />
+              <div className="relative py-2">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full" style={{ borderTop: '1px solid var(--border-subtle)' }} />
+                </div>
+                <div className="relative flex justify-center">
+                  <span className="px-2 text-[11px] text-ink-ghost" style={{ background: 'var(--surface-raised)' }}>or</span>
+                </div>
+              </div>
             </div>
           )}
 
@@ -99,7 +141,20 @@ export default function LoginPage() {
           <button
             onClick={() => handleGoogleLogin()}
             disabled={isLoading}
-            className="w-full flex items-center justify-center gap-3 py-3 px-4 border border-border rounded-md bg-surface-0 hover:bg-surface-1 transition-colors text-ink font-medium text-sm disabled:opacity-50"
+            className="w-full flex items-center justify-center gap-3 py-3.5 px-4 rounded-lg text-ink font-semibold text-sm disabled:opacity-50 transition-all duration-200"
+            style={{
+              background: 'var(--surface-0)',
+              border: '1px solid var(--border)',
+              boxShadow: 'var(--shadow-xs)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.boxShadow = 'var(--shadow-sm)'
+              e.currentTarget.style.borderColor = 'var(--ink-ghost)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.boxShadow = 'var(--shadow-xs)'
+              e.currentTarget.style.borderColor = 'var(--border)'
+            }}
           >
             {isLoading ? (
               <span className="text-ink-secondary">Redirecting…</span>
@@ -117,11 +172,8 @@ export default function LoginPage() {
           </button>
         </div>
 
-        <p className="text-center text-xs text-ink-ghost">
-          By continuing, you agree to our{' '}
-          <a href="/terms" className="underline hover:text-ink-tertiary transition-colors">
-            terms of service
-          </a>.
+        <p className="text-center text-[11px] text-ink-ghost">
+          By continuing, you agree to our terms of service.
         </p>
       </div>
     </div>

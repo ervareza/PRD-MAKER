@@ -47,7 +47,7 @@ export default function MermaidRenderer({ chart, title }: MermaidRendererProps) 
       try {
         const mermaid = await getMermaid()
 
-        const id = `mermaid-${Math.random().toString(36).substring(2, 9)}`
+        const id = `mermaid-${crypto.randomUUID().substring(0, 8)}`
         const { svg: rendered } = await mermaid.render(id, chart)
 
         if (!cancelled) {

@@ -51,27 +51,36 @@ export default function NewPrdPage() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-full px-6 py-12">
-      <div className="w-full max-w-xl">
-        <div className="text-center mb-10">
-          <h1 className="font-display text-3xl font-bold text-ink">
+    <div className="flex flex-col items-center justify-center min-h-full px-6 py-16">
+      <div className="w-full max-w-lg">
+        {/* Header */}
+        <div className="text-center mb-12 animate-fade-in-up">
+          <h1 className="font-display text-4xl font-bold text-ink tracking-tight">
             New Document
           </h1>
-          <p className="text-sm text-ink-tertiary mt-2">
-            Tell us about your project. The more detail you provide, the better
-            your PRD will be.
+          <p className="text-[15px] text-ink-tertiary mt-3 leading-relaxed max-w-sm mx-auto">
+            Tell us about your project. The more detail you provide, the better your PRD will be.
           </p>
         </div>
 
-        <form onSubmit={handleGenerate} className="space-y-6">
+        {/* Form */}
+        <form onSubmit={handleGenerate} className="space-y-5">
           {error && (
-            <div className="p-3 bg-accent-subtle text-danger rounded-md text-sm border border-danger/20">
+            <div
+              className="p-4 rounded-lg text-sm border animate-fade-in"
+              style={{
+                background: 'var(--accent-subtle)',
+                borderColor: 'oklch(0.55 0.15 25 / 0.2)',
+                color: 'var(--danger)',
+              }}
+            >
               {error}
             </div>
           )}
 
-          <div className="space-y-1.5">
-            <label htmlFor="title" className="block text-sm font-medium text-ink">
+          {/* Project Name */}
+          <div className="space-y-2 animate-fade-in-up animation-delay-100">
+            <label htmlFor="title" className="block text-sm font-semibold text-ink">
               Project Name
             </label>
             <input
@@ -81,12 +90,26 @@ export default function NewPrdPage() {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Acme Marketplace"
-              className="w-full bg-surface-raised border border-border rounded-md px-4 py-3 text-ink placeholder-ink-ghost text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-shadow"
+              className="w-full rounded-lg px-4 py-3.5 text-sm text-ink placeholder-ink-ghost focus:outline-none transition-all duration-200"
+              style={{
+                background: 'var(--surface-raised)',
+                border: '1px solid var(--border)',
+                boxShadow: 'var(--shadow-xs), inset 0 1px 2px rgba(0,0,0,0.03)',
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = 'var(--accent)'
+                e.target.style.boxShadow = 'var(--shadow-sm), 0 0 0 3px oklch(0.55 0.14 28 / 0.08)'
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = 'var(--border)'
+                e.target.style.boxShadow = 'var(--shadow-xs), inset 0 1px 2px rgba(0,0,0,0.03)'
+              }}
             />
           </div>
 
-          <div className="space-y-1.5">
-            <label htmlFor="idea" className="block text-sm font-medium text-ink">
+          {/* Project Description */}
+          <div className="space-y-2 animate-fade-in-up animation-delay-200">
+            <label htmlFor="idea" className="block text-sm font-semibold text-ink">
               Project Description
             </label>
             <textarea
@@ -95,18 +118,48 @@ export default function NewPrdPage() {
               value={idea}
               onChange={(e) => setIdea(e.target.value)}
               placeholder={"Describe what you want to build in detail.\n\nWho are the target users? What problem does it solve? What are the key features you envision? Any specific technology preferences?"}
-              rows={8}
-              className="w-full bg-surface-raised border border-border rounded-md px-4 py-3 text-ink placeholder-ink-ghost text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-shadow resize-y leading-relaxed"
+              rows={7}
+              className="w-full rounded-lg px-4 py-3.5 text-sm text-ink placeholder-ink-ghost focus:outline-none transition-all duration-200 resize-y leading-relaxed"
+              style={{
+                background: 'var(--surface-raised)',
+                border: '1px solid var(--border)',
+                boxShadow: 'var(--shadow-xs), inset 0 1px 2px rgba(0,0,0,0.03)',
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = 'var(--accent)'
+                e.target.style.boxShadow = 'var(--shadow-sm), 0 0 0 3px oklch(0.55 0.14 28 / 0.08)'
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = 'var(--border)'
+                e.target.style.boxShadow = 'var(--shadow-xs), inset 0 1px 2px rgba(0,0,0,0.03)'
+              }}
             />
-            <p className="text-xs text-ink-ghost mt-1">
+            <p className="text-xs text-ink-ghost">
               Tip: Include target audience, core features, and any technical constraints.
             </p>
           </div>
 
+          {/* Submit */}
           <button
             type="submit"
             disabled={isGenerating || !idea || !title}
-            className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-accent hover:bg-accent-hover disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-md font-semibold text-sm transition-colors"
+            className="w-full flex items-center justify-center gap-2.5 px-6 py-4 text-white rounded-lg font-semibold text-sm transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none animate-fade-in-up animation-delay-300"
+            style={{
+              background: 'var(--accent)',
+              boxShadow: 'var(--shadow-md), inset 0 1px 0 rgba(255,255,255,0.1)',
+            }}
+            onMouseEnter={(e) => {
+              if (!isGenerating) {
+                e.currentTarget.style.background = 'var(--accent-hover)'
+                e.currentTarget.style.transform = 'translateY(-1px)'
+                e.currentTarget.style.boxShadow = 'var(--shadow-lg), inset 0 1px 0 rgba(255,255,255,0.1)'
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'var(--accent)'
+              e.currentTarget.style.transform = 'translateY(0)'
+              e.currentTarget.style.boxShadow = 'var(--shadow-md), inset 0 1px 0 rgba(255,255,255,0.1)'
+            }}
           >
             {isGenerating ? (
               <>
@@ -126,6 +179,11 @@ export default function NewPrdPage() {
             )}
           </button>
         </form>
+
+        {/* Footer note */}
+        <p className="text-center text-[11px] text-ink-ghost mt-6 font-mono animate-fade-in animation-delay-300">
+          Powered by Gemini AI · typically takes 30–60 seconds
+        </p>
       </div>
     </div>
   )

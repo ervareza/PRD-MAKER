@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
 import { generateMarkdownAndDownload } from '@/utils/exportMd'
@@ -130,7 +130,7 @@ interface PrdContent {
 // ── Tiny reusable components ────────────────────────────────────────
 function SectionTitle({ children, id }: { children: React.ReactNode; id?: string }) {
   return (
-    <h2 id={id} className="font-display text-xl font-semibold text-ink mb-4 scroll-mt-24">
+    <h2 id={id} className="font-display text-xl font-semibold text-ink mb-4 scroll-mt-24 pb-2" style={{ borderBottom: '2px solid var(--accent-subtle)' }}>
       {children}
     </h2>
   )
@@ -151,7 +151,7 @@ function Badge({ children, variant = 'default' }: { children: React.ReactNode; v
       : variant === 'wont'
       ? 'bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400'
       : 'bg-surface-1 text-ink-secondary'
-  return <span className={`shrink-0 text-[11px] font-mono px-2 py-0.5 rounded-sm ${cls}`}>{children}</span>
+  return <span className={`shrink-0 text-[11px] font-mono px-2.5 py-1 rounded-md ${cls}`}>{children}</span>
 }
 
 function priorityVariant(p?: string): string {
@@ -204,7 +204,6 @@ export default function PrdViewPage() {
   const [versions, setVersions] = useState<PrdVersion[]>([])
   const [activeVersion, setActiveVersion] = useState<number>(1)
   const [isLoading, setIsLoading] = useState(true)
-  const [revisionPrompt, setRevisionPrompt] = useState('')
   const [isRevising, setIsRevising] = useState(false)
   const [revisionError, setRevisionError] = useState<string | null>(null)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
@@ -252,31 +251,46 @@ export default function PrdViewPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, refreshTrigger])
 
-  const handleRevise = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!revisionPrompt) return
+  const [abortController, setAbortController] = useState<AbortController | null>(null)
+
+  const handleRevise = async (prompt: string) => {
+    if (!prompt) return
     setIsRevising(true)
     setRevisionError(null)
     const currentContent = versions.find((v) => v.version_number === activeVersion)?.content
+
+    const controller = new AbortController()
+    setAbortController(controller)
 
     try {
       const res = await fetch('/api/update-prd', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prdId: id, revisionPrompt, previousContent: currentContent }),
+        body: JSON.stringify({ prdId: id, revisionPrompt: prompt, previousContent: currentContent }),
+        signal: controller.signal
       })
       if (!res.ok) {
         const data = await res.json().catch(() => ({ error: 'Revision failed' }))
         throw new Error(data.error || `Revision failed (${res.status})`)
       }
-      setRevisionPrompt('')
       setIsLoading(true)
       setRefreshTrigger((prev) => prev + 1)
-    } catch (err) {
-      console.error(err)
-      setRevisionError(err instanceof Error ? err.message : 'Something went wrong')
+    } catch (err: unknown) {
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        console.log('Revision aborted')
+      } else {
+        console.error(err)
+        setRevisionError(err instanceof Error ? err.message : 'Something went wrong')
+      }
     } finally {
       setIsRevising(false)
+      setAbortController(null)
+    }
+  }
+
+  const handleCancelRevise = () => {
+    if (abortController) {
+      abortController.abort()
     }
   }
 
@@ -367,10 +381,10 @@ export default function PrdViewPage() {
   }
 
   return (
-    <div className="flex flex-col h-full">
-      {/* ISSUE-010: Revision overlay */}
+    <div className="flex flex-col h-full relative">
+      {/* Revision overlay */}
       {isRevising && (
-        <div className="absolute inset-0 bg-surface-0/60 backdrop-blur-sm z-30 flex flex-col items-center justify-center gap-3">
+        <div className="fixed inset-0 bg-surface-0/60 backdrop-blur-sm z-30 flex flex-col items-center justify-center gap-3">
           <svg className="w-6 h-6 animate-spin text-accent" viewBox="0 0 16 16" fill="none">
             <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="2" opacity="0.2" />
             <path d="M14 8a6 6 0 00-6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
@@ -381,15 +395,18 @@ export default function PrdViewPage() {
 
       {/* ISSUE-013: Delete confirmation modal */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center">
-          <div className="bg-surface-raised border border-border rounded-lg p-6 max-w-sm w-full mx-4 shadow-xl">
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center animate-fade-in" style={{ backdropFilter: 'blur(4px)' }}>
+          <div
+            className="rounded-xl p-6 max-w-sm w-full mx-4 animate-scale-in"
+            style={{ background: 'var(--surface-raised)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xl)' }}
+          >
             <h3 className="font-display font-bold text-ink text-lg mb-2">Delete Document?</h3>
             <p className="text-sm text-ink-secondary mb-5">This will permanently delete <strong>{prd?.title}</strong> and all its versions. This cannot be undone.</p>
             <div className="flex gap-3 justify-end">
-              <button onClick={() => setShowDeleteConfirm(false)} disabled={isDeleting} className="px-4 py-2 text-sm font-medium text-ink-secondary bg-surface-1 border border-border rounded-md hover:bg-surface-raised transition-colors">
+            <button onClick={() => setShowDeleteConfirm(false)} disabled={isDeleting} className="px-4 py-2.5 text-sm font-medium text-ink-secondary rounded-lg transition-all duration-200" style={{ background: 'var(--surface-1)', border: '1px solid var(--border-subtle)' }}>
                 Cancel
               </button>
-              <button onClick={handleDelete} disabled={isDeleting} className="px-4 py-2 text-sm font-medium text-white bg-danger hover:bg-red-700 rounded-md transition-colors disabled:opacity-50">
+              <button onClick={handleDelete} disabled={isDeleting} className="px-4 py-2.5 text-sm font-medium text-white rounded-lg transition-all duration-200 disabled:opacity-50" style={{ background: 'var(--danger)', boxShadow: 'var(--shadow-sm)' }}>
                 {isDeleting ? 'Deleting…' : 'Delete'}
               </button>
             </div>
@@ -397,9 +414,9 @@ export default function PrdViewPage() {
         </div>
       )}
 
-      {/* Scrollable content area */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="p-8 pb-6 max-w-3xl mx-auto">
+      {/* Content area */}
+      <div className="flex-1">
+        <div className="p-8 pb-32 max-w-3xl mx-auto">
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 print:hidden">
             <div className="min-w-0">
@@ -409,7 +426,8 @@ export default function PrdViewPage() {
             <div className="flex items-center gap-2 shrink-0">
               <button
                 onClick={() => setShowToc(!showToc)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-ink-secondary bg-surface-raised border border-border rounded-md hover:bg-surface-1 transition-colors"
+                disabled={isRevising}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-ink-secondary bg-surface-raised border border-border rounded-md hover:bg-surface-1 transition-colors disabled:opacity-40 disabled:pointer-events-none"
                 title="Table of Contents"
               >
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
@@ -420,7 +438,8 @@ export default function PrdViewPage() {
               <select
                 value={activeVersion}
                 onChange={(e) => setActiveVersion(Number(e.target.value))}
-                className="bg-surface-raised border border-border rounded-md px-2.5 py-1.5 text-xs font-mono text-ink focus:ring-2 focus:ring-accent"
+                disabled={isRevising}
+                className="bg-surface-raised border border-border rounded-md px-2.5 py-1.5 text-xs font-mono text-ink focus:ring-2 focus:ring-accent disabled:opacity-40"
               >
                 {versions.map((v) => (
                   <option key={v.id} value={v.version_number}>
@@ -430,7 +449,8 @@ export default function PrdViewPage() {
               </select>
               <button
                 onClick={handleExportMd}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-ink-secondary bg-surface-raised border border-border rounded-md hover:bg-surface-1 transition-colors"
+                disabled={isRevising}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-ink-secondary bg-surface-raised border border-border rounded-md hover:bg-surface-1 transition-colors disabled:opacity-40 disabled:pointer-events-none"
               >
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M6 1v8M3 6l3 3 3-3M1 10h10" />
@@ -439,7 +459,8 @@ export default function PrdViewPage() {
               </button>
               <button
                 onClick={() => window.print()}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-ink-secondary bg-surface-raised border border-border rounded-md hover:bg-surface-1 transition-colors"
+                disabled={isRevising}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-ink-secondary bg-surface-raised border border-border rounded-md hover:bg-surface-1 transition-colors disabled:opacity-40 disabled:pointer-events-none"
               >
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M3 4V1h6v3M1 4h10v5H9v2H3V9H1z" />
@@ -448,8 +469,10 @@ export default function PrdViewPage() {
               </button>
               <button
                 onClick={() => setShowDeleteConfirm(true)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-danger bg-surface-raised border border-danger/20 rounded-md hover:bg-danger/5 transition-colors"
+                disabled={isRevising}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-danger bg-surface-raised border border-danger/20 rounded-md hover:bg-danger/5 transition-colors disabled:opacity-40 disabled:pointer-events-none"
                 title="Delete this PRD"
+                aria-label="Delete document"
               >
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M1.5 3h9M4.5 3V1.5h3V3M9 3v7.5a1 1 0 01-1 1H4a1 1 0 01-1-1V3" />
@@ -479,7 +502,10 @@ export default function PrdViewPage() {
 
           {/* Document Body */}
           {c && (
-            <article className="bg-surface-raised border border-border rounded-lg shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-8 sm:p-10 space-y-10 print:shadow-none print:border-none print:p-0">
+            <article
+              className="rounded-xl p-8 sm:p-10 space-y-10 print:shadow-none print:border-none print:p-0"
+              style={{ background: 'var(--surface-raised)', border: '1px solid var(--border-subtle)', boxShadow: 'var(--shadow-md)' }}
+            >
               {/* Print header */}
               <div className="hidden print:block border-b border-border pb-6 mb-8">
                 <h1 className="font-display text-3xl font-bold">{prd.title}</h1>
@@ -516,7 +542,7 @@ export default function PrdViewPage() {
                       <div className="bg-surface-0 border border-border-subtle rounded-md p-4">
                         <h3 className="text-xs font-mono font-bold text-ink-ghost uppercase tracking-widest mb-2">Pain Points</h3>
                         <ul className="space-y-1.5">
-                          {c.problemStatement.painPoints.map((p, i) => <Bullet key={i}>{p}</Bullet>)}
+                          {Array.isArray(c.problemStatement.painPoints) && c.problemStatement.painPoints.map((p, i) => <Bullet key={i}>{p}</Bullet>)}
                         </ul>
                       </div>
                     )}
@@ -547,7 +573,7 @@ export default function PrdViewPage() {
                       <div className="bg-surface-0 border border-border-subtle rounded-md p-4">
                         <h3 className="text-xs font-mono font-bold text-accent uppercase tracking-widest mb-2">Business Goals</h3>
                         <ul className="space-y-1.5">
-                          {c.goals.businessGoals.map((g, i) => <Bullet key={i}>{g}</Bullet>)}
+                          {Array.isArray(c.goals.businessGoals) && c.goals.businessGoals.map((g, i) => <Bullet key={i}>{g}</Bullet>)}
                         </ul>
                       </div>
                     )}
@@ -555,7 +581,7 @@ export default function PrdViewPage() {
                       <div className="bg-surface-0 border border-border-subtle rounded-md p-4">
                         <h3 className="text-xs font-mono font-bold text-accent uppercase tracking-widest mb-2">User Goals</h3>
                         <ul className="space-y-1.5">
-                          {c.goals.userGoals.map((g, i) => <Bullet key={i}>{g}</Bullet>)}
+                          {Array.isArray(c.goals.userGoals) && c.goals.userGoals.map((g, i) => <Bullet key={i}>{g}</Bullet>)}
                         </ul>
                       </div>
                     )}
@@ -563,7 +589,7 @@ export default function PrdViewPage() {
                       <div className="bg-surface-0 border border-border-subtle rounded-md p-4">
                         <h3 className="text-xs font-mono font-bold text-ink-ghost uppercase tracking-widest mb-2">Non-Goals</h3>
                         <ul className="space-y-1.5">
-                          {c.goals.nonGoals.map((g, i) => <Bullet key={i}>{g}</Bullet>)}
+                          {Array.isArray(c.goals.nonGoals) && c.goals.nonGoals.map((g, i) => <Bullet key={i}>{g}</Bullet>)}
                         </ul>
                       </div>
                     )}
@@ -621,7 +647,7 @@ export default function PrdViewPage() {
                           <div>
                             <p className="text-xs font-semibold text-ink mb-1">Goals</p>
                             <ul className="space-y-0.5">
-                              {p.goals.map((g, gi) => (
+                              {Array.isArray(p.goals) && p.goals.map((g, gi) => (
                                 <li key={gi} className="text-xs text-ink-secondary flex items-baseline gap-1.5">
                                   <span className="text-accent">→</span> {g}
                                 </li>
@@ -633,7 +659,7 @@ export default function PrdViewPage() {
                           <div>
                             <p className="text-xs font-semibold text-ink mb-1">Frustrations</p>
                             <ul className="space-y-0.5">
-                              {p.frustrations.map((f, fi) => (
+                              {Array.isArray(p.frustrations) && p.frustrations.map((f, fi) => (
                                 <li key={fi} className="text-xs text-ink-secondary flex items-baseline gap-1.5">
                                   <span className="text-red-500">✕</span> {f}
                                 </li>
@@ -678,7 +704,7 @@ export default function PrdViewPage() {
                           <div className="border-t border-border-subtle pt-2 mt-2">
                             <p className="text-[10px] uppercase tracking-widest text-ink-ghost font-medium mb-1">Acceptance Criteria</p>
                             <ul className="space-y-0.5">
-                              {s.acceptanceCriteria.map((ac, ai) => (
+                              {Array.isArray(s.acceptanceCriteria) && s.acceptanceCriteria.map((ac, ai) => (
                                 <li key={ai} className="text-xs text-ink-secondary flex items-baseline gap-1.5">
                                   <span className="text-accent">✓</span> {ac}
                                 </li>
@@ -718,7 +744,7 @@ export default function PrdViewPage() {
                           <div className="border-t border-border-subtle pt-3">
                             <p className="text-[10px] uppercase tracking-widest text-ink-ghost font-medium mb-1.5">Acceptance Criteria</p>
                             <ul className="space-y-0.5">
-                              {f.acceptanceCriteria.map((ac, ai) => (
+                              {Array.isArray(f.acceptanceCriteria) && f.acceptanceCriteria.map((ac, ai) => (
                                 <li key={ai} className="text-xs text-ink-secondary flex items-baseline gap-1.5">
                                   <span className="text-accent">✓</span> {ac}
                                 </li>
@@ -748,7 +774,7 @@ export default function PrdViewPage() {
                       <div key={fi} className="bg-surface-0 border border-border-subtle rounded-md p-5">
                         <h3 className="font-semibold text-ink text-sm mb-3">{flow.name}</h3>
                         <ol className="space-y-1 mb-3">
-                          {flow.steps.map((step, si) => (
+                          {Array.isArray(flow.steps) && flow.steps.map((step, si) => (
                             <li key={si} className="flex items-baseline gap-2.5 text-sm text-ink-secondary">
                               <span className="font-mono text-[11px] text-accent font-bold shrink-0">{si + 1}.</span>
                               <span className="leading-relaxed">{step}</span>
@@ -766,7 +792,7 @@ export default function PrdViewPage() {
                           <div className={flow.happyPath ? 'mt-2' : 'border-t border-border-subtle pt-3'}>
                             <p className="text-[10px] uppercase tracking-widest text-ink-ghost font-medium mb-1">Edge Cases</p>
                             <ul className="space-y-0.5">
-                              {flow.edgeCases.map((ec, ei) => (
+                              {Array.isArray(flow.edgeCases) && flow.edgeCases.map((ec, ei) => (
                                 <li key={ei} className="text-xs text-ink-secondary flex items-baseline gap-1.5">
                                   <span className="text-amber-500">⚠</span> {ec}
                                 </li>
@@ -1022,20 +1048,22 @@ export default function PrdViewPage() {
                               </p>
                             )}
                             <div className="grid gap-3 sm:grid-cols-2">
-                              {(ep.requestParams && ep.requestParams.length > 0) && (
+                              {(Array.isArray(ep.requestParams) && ep.requestParams.length > 0) && (
                                 <div>
                                   <p className="text-[10px] font-mono text-ink-ghost uppercase tracking-wider mb-1">Params</p>
                                   {ep.requestParams.map((p, pi) => (
-                                    <p key={pi} className="text-xs font-mono text-ink-secondary">{p}</p>
+                                    <p key={pi} className="text-xs font-mono text-ink-secondary">{typeof p === 'string' ? p : JSON.stringify(p)}</p>
                                   ))}
                                 </div>
                               )}
-                              {(ep.requestBody && ep.requestBody.length > 0) && (
+                              {ep.requestBody && (
                                 <div>
                                   <p className="text-[10px] font-mono text-ink-ghost uppercase tracking-wider mb-1">Request Body</p>
-                                  {ep.requestBody.map((b, bi) => (
-                                    <p key={bi} className="text-xs font-mono text-ink-secondary">{b}</p>
-                                  ))}
+                                  {Array.isArray(ep.requestBody) ? ep.requestBody.map((b, bi) => (
+                                    <p key={bi} className="text-xs font-mono text-ink-secondary">{typeof b === 'string' ? b : JSON.stringify(b)}</p>
+                                  )) : (
+                                    <code className="text-xs font-mono text-ink-secondary block whitespace-pre-wrap">{typeof ep.requestBody === 'string' ? ep.requestBody : JSON.stringify(ep.requestBody, null, 2)}</code>
+                                  )}
                                 </div>
                               )}
                             </div>
@@ -1045,7 +1073,7 @@ export default function PrdViewPage() {
                                 <code className="text-xs font-mono text-accent block bg-surface-1/50 p-2 rounded">{ep.responseBody}</code>
                               </div>
                             )}
-                            {ep.responseCodes && ep.responseCodes.length > 0 && (
+                            {Array.isArray(ep.responseCodes) && ep.responseCodes.length > 0 && (
                               <div className="flex flex-wrap gap-1.5 pt-1">
                                 {ep.responseCodes.map((code, ci) => (
                                   <span key={ci} className="text-[10px] font-mono text-ink-ghost bg-surface-1 px-1.5 py-0.5 rounded">
@@ -1228,46 +1256,106 @@ export default function PrdViewPage() {
         </div>
       </div>
 
-      {/* Floating Revision Bar — always visible at bottom */}
-      <div className="shrink-0 border-t border-border bg-surface-0/90 backdrop-blur-md print:hidden">
-        <div className="max-w-3xl mx-auto px-8 py-4">
-          <form onSubmit={handleRevise} className="flex gap-3">
-            <div className="flex-1 relative">
-              <input
-                type="text"
-                value={revisionPrompt}
-                onChange={(e) => setRevisionPrompt(e.target.value)}
-                placeholder="Request revisions… e.g. Add mobile-first user stories, focus on enterprise"
-                className="w-full bg-surface-raised border border-border rounded-md pl-4 pr-4 py-2.5 text-sm text-ink placeholder-ink-ghost focus:outline-none focus:ring-2 focus:ring-accent"
-              />
-            </div>
+      {/* Floating Revision Bar */}
+      <FloatingChatBar 
+        onRevise={handleRevise} 
+        isRevising={isRevising} 
+        revisionError={revisionError} 
+        onCancel={handleCancelRevise} 
+      />
+    </div>
+  )
+}
+
+// ── Floating Chat Bar Component ─────────────────────────────────────────
+function FloatingChatBar({ 
+  onRevise, 
+  isRevising, 
+  revisionError, 
+  onCancel 
+}: { 
+  onRevise: (prompt: string) => void, 
+  isRevising: boolean, 
+  revisionError: string | null, 
+  onCancel: () => void 
+}) {
+  const [prompt, setPrompt] = useState('')
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  const handleSubmit = (e?: React.FormEvent) => {
+    e?.preventDefault()
+    if (!prompt.trim() || isRevising) return
+    onRevise(prompt)
+    setPrompt('')
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto'
+    }
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleSubmit()
+    }
+  }
+
+  return (
+    <div className="absolute bottom-0 left-0 right-0 flex justify-center pointer-events-none print:hidden px-4 pb-4 pt-16 bg-gradient-to-t from-surface-0 via-surface-0/90 to-transparent">
+      <div className="w-full max-w-3xl pointer-events-auto flex flex-col items-center">
+        <form 
+          onSubmit={handleSubmit} 
+          className="w-full relative flex items-end rounded-[24px] transition-shadow duration-200"
+          style={{ 
+            background: 'var(--surface-raised)', 
+            border: '1px solid var(--border)', 
+            boxShadow: 'var(--shadow-lg)' 
+          }}
+        >
+          <textarea
+            ref={textareaRef}
+            value={prompt}
+            onChange={(e) => {
+              setPrompt(e.target.value)
+              e.target.style.height = 'auto'
+              e.target.style.height = Math.min(e.target.scrollHeight, 200) + 'px'
+            }}
+            onKeyDown={handleKeyDown}
+            rows={1}
+            placeholder="Ask anything or request revisions..."
+            className="flex-1 bg-transparent border-0 text-ink placeholder-ink-ghost pl-5 pr-14 py-3.5 text-sm focus:outline-none focus:ring-0 resize-none overflow-y-auto"
+            style={{ minHeight: '48px', maxHeight: '200px' }}
+          />
+          {isRevising ? (
+            <button
+              type="button"
+              onClick={onCancel}
+              className="absolute right-2 bottom-2 w-8 h-8 flex items-center justify-center rounded-full text-surface-0 hover:opacity-80 transition-opacity"
+              style={{ background: 'var(--ink)' }}
+            >
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+                <rect x="2" y="2" width="8" height="8" rx="1.5" />
+              </svg>
+            </button>
+          ) : (
             <button
               type="submit"
-              disabled={isRevising || !revisionPrompt}
-              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-accent hover:bg-accent-hover disabled:opacity-40 text-white rounded-md font-medium text-sm transition-colors shrink-0"
+              disabled={!prompt.trim()}
+              className="absolute right-2 bottom-2 w-8 h-8 flex items-center justify-center rounded-full bg-accent text-white hover:bg-accent-hover disabled:opacity-40 transition-colors"
             >
-              {isRevising ? (
-                <svg className="w-4 h-4 animate-spin" viewBox="0 0 16 16" fill="none">
-                  <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="2" opacity="0.3" />
-                  <path d="M14 8a6 6 0 00-6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                </svg>
-              ) : (
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M14 2L7 13l-2-4-4-2 13-5z" />
-                </svg>
-              )}
-              <span className="hidden sm:inline">Revise to v{(versions.length > 0 ? Math.max(...versions.map(v => v.version_number)) : activeVersion) + 1}</span>
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M7 13V1M1 7l6-6 6 6" />
+              </svg>
             </button>
-          </form>
-          {revisionError && (
-            <div className="mt-2 p-2 bg-danger/10 border border-danger/20 rounded-md text-xs text-danger text-center">
-              {revisionError}
-            </div>
           )}
-          <p className="text-[11px] text-ink-ghost mt-1.5 text-center">
-            AI will generate a new version based on your instructions
-          </p>
-        </div>
+        </form>
+        {revisionError && (
+           <div className="mt-2 p-2 w-full bg-danger/10 border border-danger/20 rounded-md text-xs text-danger text-center backdrop-blur-md">
+             {revisionError}
+           </div>
+        )}
+        <p className="text-[10px] text-ink-ghost mt-3 text-center">
+          PRD Maker can make mistakes. Check important info.
+        </p>
       </div>
     </div>
   )
