@@ -8,6 +8,78 @@ export default function ChangelogPage() {
 
   const releases = [
     {
+      version: 'v2.1.0',
+      date: '2026-05-25',
+      added: {
+        en: [
+          'Auth error page (/auth/auth-code-error) — users no longer see 404 on failed OAuth login.',
+          'PRD delete functionality — trash button in document header with confirmation modal and cascade delete.',
+          'Dashboard now shows all PRDs in a responsive grid with titles, descriptions, and timestamps.',
+          'Sidebar auto-refreshes after PRD creation/deletion.',
+          'Navigation guard warns users if they try to leave during PRD generation.',
+          'Revision overlay with spinner prevents reading stale content during AI revision.',
+          'Version limit: max 50 revisions per PRD to prevent storage bloat.',
+          'Changelog link added to sidebar footer.',
+          'Database migration: NOT NULL constraint on prds.user_id, index on prd_versions.prd_id.',
+        ],
+        id: [
+          'Halaman error autentikasi (/auth/auth-code-error) — pengguna tidak lagi melihat 404 saat OAuth gagal.',
+          'Fitur hapus PRD — tombol hapus di header dokumen dengan modal konfirmasi dan cascade delete.',
+          'Dashboard sekarang menampilkan semua PRD dalam grid responsif dengan judul, deskripsi, dan timestamp.',
+          'Sidebar otomatis ter-refresh setelah pembuatan/penghapusan PRD.',
+          'Peringatan navigasi saat pengguna mencoba meninggalkan halaman selama pembuatan PRD.',
+          'Overlay revisi dengan spinner mencegah pembacaan konten lama selama revisi AI.',
+          'Batas versi: maks 50 revisi per PRD untuk mencegah penyimpanan membengkak.',
+          'Link changelog ditambahkan di footer sidebar.',
+          'Migrasi database: constraint NOT NULL pada prds.user_id, indeks pada prd_versions.prd_id.',
+        ]
+      },
+      changed: {
+        en: [
+          'Switched AI provider from Groq (Llama 3.3) to Google Gemini API (gemini-3.1-flash-lite).',
+          'Input validation on PRD generation: title (2–200 chars), idea (10–10,000 chars).',
+          'API error messages no longer leak implementation details.',
+          'Bumped maxDuration from 60s to 120s for complex PRD generation.',
+        ],
+        id: [
+          'Beralih penyedia AI dari Groq (Llama 3.3) ke Google Gemini API (gemini-3.1-flash-lite).',
+          'Validasi input pada pembuatan PRD: judul (2–200 karakter), ide (10–10.000 karakter).',
+          'Pesan error API tidak lagi membocorkan detail implementasi.',
+          'Menaikkan maxDuration dari 60 detik ke 120 detik untuk pembuatan PRD kompleks.',
+        ]
+      },
+      fixed: {
+        en: [
+          'Export filename regex bug: spaces are now properly replaced with underscores.',
+          'Self-referencing --font-mono CSS variable replaced with proper monospace fallback stack.',
+          'Terms of service text in login page is now a clickable link.',
+        ],
+        id: [
+          'Bug regex nama file ekspor: spasi sekarang diganti dengan garis bawah dengan benar.',
+          'Variabel CSS --font-mono yang mereferensikan diri sendiri diganti dengan stack fallback monospace yang tepat.',
+          'Teks syarat layanan di halaman login sekarang berupa tautan yang dapat diklik.',
+        ]
+      },
+      removed: {
+        en: [
+          'Dead /auth/signout server route (logout uses client-side supabase.auth.signOut()).',
+        ],
+        id: [
+          'Rute server /auth/signout yang tidak terpakai (logout menggunakan supabase.auth.signOut() sisi klien).',
+        ]
+      },
+      security: {
+        en: [
+          'seed-test-prd route blocked in production via NODE_ENV guard.',
+          'Verified .env.local never committed to git history.',
+        ],
+        id: [
+          'Rute seed-test-prd diblokir di produksi melalui guard NODE_ENV.',
+          'Memverifikasi .env.local tidak pernah di-commit ke riwayat git.',
+        ]
+      }
+    },
+    {
       version: 'v2.0.1',
       date: '2026-05-23',
       added: {
@@ -210,6 +282,40 @@ export default function ChangelogPage() {
                     {rel.fixed[language].map((item, idx) => (
                       <li key={idx} className="text-sm text-ink-secondary leading-relaxed flex items-baseline gap-2">
                         <span className="w-1.5 h-1.5 rounded-full bg-ink-tertiary shrink-0 translate-y-[8px]" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Removed section */}
+              {rel.removed && rel.removed[language] && rel.removed[language].length > 0 && (
+                <div className="space-y-3 pt-2">
+                  <h3 className="font-display text-sm font-bold uppercase tracking-wider text-ink">
+                    {language === 'en' ? 'Removed' : 'Dihapus'}
+                  </h3>
+                  <ul className="space-y-2">
+                    {rel.removed[language].map((item, idx) => (
+                      <li key={idx} className="text-sm text-ink-secondary leading-relaxed flex items-baseline gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-danger shrink-0 translate-y-[8px]" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Security section */}
+              {rel.security && rel.security[language] && rel.security[language].length > 0 && (
+                <div className="space-y-3 pt-2">
+                  <h3 className="font-display text-sm font-bold uppercase tracking-wider text-ink">
+                    {language === 'en' ? 'Security' : 'Keamanan'}
+                  </h3>
+                  <ul className="space-y-2">
+                    {rel.security[language].map((item, idx) => (
+                      <li key={idx} className="text-sm text-ink-secondary leading-relaxed flex items-baseline gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-warning shrink-0 translate-y-[8px]" />
                         <span>{item}</span>
                       </li>
                     ))}

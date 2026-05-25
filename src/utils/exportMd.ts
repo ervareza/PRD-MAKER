@@ -72,6 +72,15 @@ export function generateMarkdownAndDownload(title: string, versionNumber: number
     })
   }
 
+  // ── Mermaid Diagrams ──
+  if (c.architectureDiagram) {
+    md += `## System Architecture\n\n\`\`\`mermaid\n${c.architectureDiagram}\n\`\`\`\n\n`
+  }
+
+  if (c.userJourneyDiagram) {
+    md += `## User Journey\n\n\`\`\`mermaid\n${c.userJourneyDiagram}\n\`\`\`\n\n`
+  }
+
   if (c.nonFunctionalRequirements) {
     md += `## Non-Functional Requirements\n\n`
     const nfr = c.nonFunctionalRequirements
@@ -108,14 +117,66 @@ export function generateMarkdownAndDownload(title: string, versionNumber: number
     }
   }
 
-  if (c.dataModel?.length) {
+  // ── Data Model (new + legacy) ──
+  if (c.dataModel) {
     md += `## Data Model\n\n`
-    c.dataModel.forEach((e: any) => {
-      md += `### ${e.entity}\n\n`
-      md += `| Field |\n|---|\n`
-      e.fields.forEach((f: string) => { md += `| ${f} |\n` })
-      if (e.relationships?.length) md += `\n**Relationships:** ${e.relationships.join(', ')}\n`
-      md += '\n'
+    if (!Array.isArray(c.dataModel)) {
+      // New format with ERD + tables
+      if (c.dataModel.erdDiagram) {
+        md += `### Entity Relationship Diagram\n\n\`\`\`mermaid\n${c.dataModel.erdDiagram}\n\`\`\`\n\n`
+      }
+      if (c.dataModel.tables?.length) {
+        c.dataModel.tables.forEach((t: any) => {
+          md += `### ${t.tableName}\n\n`
+          if (t.description) md += `${t.description}\n\n`
+          md += `| Key | Column | Type | Constraints |\n|---|---|---|---|\n`
+          t.columns.forEach((col: any) => {
+            const isPK = col.constraints?.toUpperCase().includes('PRIMARY KEY')
+            const isFK = col.constraints?.toUpperCase().includes('REFERENCES') || col.name.endsWith('_id')
+            const keyIcon = isPK ? '🔑' : (isFK ? '🔗' : '')
+            md += `| ${keyIcon} | ${col.name} | \`${col.type}\` | ${col.constraints || '—'} |\n`
+          })
+          md += '\n'
+          if (t.indexes?.length) {
+            md += `**Indexes:** ${t.indexes.join(', ')}\n\n`
+          }
+          if (t.relationships?.length) {
+            md += `**Relationships:** ${t.relationships.join(' · ')}\n\n`
+          }
+        })
+      }
+    } else {
+      // Legacy format
+      c.dataModel.forEach((e: any) => {
+        md += `### ${e.entity}\n\n`
+        md += `| Field |\n|---|\n`
+        e.fields.forEach((f: string) => { md += `| ${f} |\n` })
+        if (e.relationships?.length) md += `\n**Relationships:** ${e.relationships.join(', ')}\n`
+        md += '\n'
+      })
+    }
+  }
+
+  // ── API Endpoints ──
+  if (c.apiEndpoints?.length) {
+    md += `## API Design\n\n`
+    md += `| Method | Endpoint | Description | Auth |\n|---|---|---|---|\n`
+    c.apiEndpoints.forEach((ep: any) => {
+      md += `| \`${ep.method.toUpperCase()}\` | \`${ep.path}\` | ${ep.description || '—'} | ${ep.authentication || '—'} |\n`
+    })
+    md += '\n'
+    // Detailed endpoint specs
+    c.apiEndpoints.forEach((ep: any) => {
+      md += `### \`${ep.method.toUpperCase()}\` ${ep.path}\n\n`
+      if (ep.description) md += `${ep.description}\n\n`
+      if (ep.requestParams?.length) {
+        md += `**Request Params:**\n${ep.requestParams.map((p: string) => `- ${p}`).join('\n')}\n\n`
+      }
+      if (ep.requestBody?.length) {
+        md += `**Request Body:**\n${ep.requestBody.map((b: string) => `- ${b}`).join('\n')}\n\n`
+      }
+      if (ep.responseBody) md += `**Response:** \`${ep.responseBody}\`\n\n`
+      if (ep.responseCodes?.length) md += `**Status Codes:** ${ep.responseCodes.join(', ')}\n\n`
     })
   }
 
@@ -161,7 +222,7 @@ export function generateMarkdownAndDownload(title: string, versionNumber: number
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `${title.replace(/\\s+/g, '_')}_v${versionNumber}.md`
+  a.download = `${title.replace(/\s+/g, '_')}_v${versionNumber}.md`
   a.click()
   URL.revokeObjectURL(url)
 }

@@ -1,26 +1,27 @@
 'use client'
 
 import { createClient } from '@/utils/supabase/client'
-import { useState } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useLanguage } from '@/context/LanguageContext'
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
-  const [recentAccounts, setRecentAccounts] = useState<string[]>(() => {
-    if (typeof window === 'undefined') return []
+  const [recentAccounts, setRecentAccounts] = useState<string[]>([])
+  const supabase = useMemo(() => createClient(), [])
+  const { t } = useLanguage()
+
+  // Load recent accounts from localStorage after mount (avoids hydration mismatch)
+  useEffect(() => {
     try {
       const stored = localStorage.getItem('prd_recent_accounts')
       if (stored) {
         const accounts = JSON.parse(stored)
-        if (Array.isArray(accounts)) return accounts
+        if (Array.isArray(accounts)) setRecentAccounts(accounts)
       }
     } catch {
       // ignore
     }
-    return []
-  })
-  const supabase = createClient()
-  const { t } = useLanguage()
+  }, [])
 
   const handleGoogleLogin = async (loginHint?: string) => {
     setIsLoading(true)
@@ -117,7 +118,10 @@ export default function LoginPage() {
         </div>
 
         <p className="text-center text-xs text-ink-ghost">
-          By continuing, you agree to our terms of service.
+          By continuing, you agree to our{' '}
+          <a href="/terms" className="underline hover:text-ink-tertiary transition-colors">
+            terms of service
+          </a>.
         </p>
       </div>
     </div>

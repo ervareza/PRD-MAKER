@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
 export default function NewPrdPage() {
@@ -9,6 +9,16 @@ export default function NewPrdPage() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
+
+  // ISSUE-009: Warn user if they navigate away during generation
+  useEffect(() => {
+    if (!isGenerating) return
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault()
+    }
+    window.addEventListener('beforeunload', handler)
+    return () => window.removeEventListener('beforeunload', handler)
+  }, [isGenerating])
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -30,6 +40,8 @@ export default function NewPrdPage() {
       }
 
       const data = await res.json()
+      // INT-001: Notify sidebar to auto-refresh
+      window.dispatchEvent(new CustomEvent('prd-created'))
       router.push(`/prd/${data.prdId}`)
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Something went wrong'

@@ -5,6 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v2.1.0] - 2026-05-25
+### Added
+- Auth error page (`/auth/auth-code-error`) — users no longer see 404 on failed OAuth login.
+- PRD delete functionality — trash button in document header with confirmation modal and cascade delete.
+- Dashboard now shows all PRDs in a responsive grid with titles, descriptions, and timestamps.
+- Sidebar auto-refreshes after PRD creation/deletion via custom `prd-created` event.
+- Navigation guard (`beforeunload`) warns users during PRD generation.
+- Revision overlay with spinner prevents reading stale content during AI revision.
+- Version limit: max 50 revisions per PRD to prevent storage bloat.
+- Changelog link added to sidebar footer.
+- Database migration: `NOT NULL` constraint on `prds.user_id`, index on `prd_versions.prd_id`.
+
+### Changed
+- **Switched AI provider from Groq (Llama 3.3) to Google Gemini API (`gemini-3.1-flash-lite`)**. Both `generate-prd` and `update-prd` routes now use the Gemini REST API with `systemInstruction`, `responseMimeType: application/json`, and proper response parsing.
+- Input validation on PRD generation: title (2–200 chars), idea (10–10,000 chars), type checks and trimming.
+- API error messages no longer leak implementation details (env var names, internal errors).
+- Ownership check returns 403/404 instead of 401 to avoid leaking document existence.
+- JSON parse failures return 502 with user-friendly retry message instead of crashing.
+- Bumped `maxDuration` from 60s to 120s for complex PRD generation.
+- Sidebar fetch debounced (100ms) to reduce redundant requests on fast navigation.
+
+### Fixed
+- Export filename regex bug: `\\\\s+` → `\\s+` so spaces are properly replaced with underscores.
+- Self-referencing `--font-mono` CSS variable replaced with proper monospace fallback stack.
+- "Terms of service" text in login page is now a clickable link.
+
+### Removed
+- Dead `/auth/signout` server route (logout uses client-side `supabase.auth.signOut()`).
+
+### Security
+- `seed-test-prd` route blocked in production via `NODE_ENV` guard.
+- Verified `.env.local` never committed to git history.
+
+
 ## [v2.0.1] - 2026-05-23
 ### Fixed
 - Fixed missing React elements bug on language switch in `page.tsx` by using index as stable key for feature grid array.

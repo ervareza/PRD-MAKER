@@ -1,9 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useParams } from 'next/navigation'
+import { useState, useEffect, useMemo } from 'react'
+import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
 import { generateMarkdownAndDownload } from '@/utils/exportMd'
+import dynamic from 'next/dynamic'
+
+const MermaidRenderer = dynamic(() => import('@/components/MermaidRenderer'), { ssr: false })
 
 interface PrdData {
   id: string
@@ -70,6 +73,8 @@ interface PrdContent {
     happyPath?: string
     edgeCases?: string[]
   }>
+  architectureDiagram?: string
+  userJourneyDiagram?: string
   informationArchitecture?: {
     siteMap?: string[]
     navigationModel?: string
@@ -77,10 +82,29 @@ interface PrdContent {
   }
   nonFunctionalRequirements?: any
   techStackRecommendation?: any
-  dataModel?: Array<{
+  dataModel?: {
+    erdDiagram?: string
+    tables?: Array<{
+      tableName: string
+      description?: string
+      columns: Array<{ name: string; type: string; constraints?: string }>
+      indexes?: string[]
+      relationships?: string[]
+    }>
+  } | Array<{
     entity: string
     fields: string[]
     relationships?: string[]
+  }>
+  apiEndpoints?: Array<{
+    method: string
+    path: string
+    description?: string
+    authentication?: string
+    requestParams?: string[]
+    requestBody?: string[]
+    responseBody?: string
+    responseCodes?: string[]
   }>
   milestones?: Array<{
     phase: string
@@ -158,10 +182,13 @@ const TOC_ITEMS = [
   { id: 'user-stories', label: 'User Stories' },
   { id: 'core-features', label: 'Core Features' },
   { id: 'user-flows', label: 'User Flows' },
+  { id: 'system-architecture', label: 'System Architecture' },
+  { id: 'user-journey', label: 'User Journey' },
   { id: 'information-architecture', label: 'Information Architecture' },
   { id: 'nfr', label: 'Non-Functional Requirements' },
   { id: 'tech-stack', label: 'Tech Stack' },
-  { id: 'data-model', label: 'Data Model' },
+  { id: 'data-model', label: 'Data Model & ERD' },
+  { id: 'api-design', label: 'API Design' },
   { id: 'milestones', label: 'Milestones & Timeline' },
   { id: 'success-metrics', label: 'Success Metrics' },
   { id: 'risks', label: 'Risks & Mitigations' },
@@ -171,15 +198,19 @@ const TOC_ITEMS = [
 // ── Main Page ───────────────────────────────────────────────────────
 export default function PrdViewPage() {
   const { id } = useParams()
-  const supabase = createClient()
+  const router = useRouter()
+  const supabase = useMemo(() => createClient(), [])
   const [prd, setPrd] = useState<PrdData | null>(null)
   const [versions, setVersions] = useState<PrdVersion[]>([])
   const [activeVersion, setActiveVersion] = useState<number>(1)
   const [isLoading, setIsLoading] = useState(true)
   const [revisionPrompt, setRevisionPrompt] = useState('')
   const [isRevising, setIsRevising] = useState(false)
+  const [revisionError, setRevisionError] = useState<string | null>(null)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
   const [showToc, setShowToc] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
     let isMounted = true
@@ -218,12 +249,14 @@ export default function PrdViewPage() {
     return () => {
       isMounted = false
     }
-  }, [id, supabase, refreshTrigger])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, refreshTrigger])
 
   const handleRevise = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!revisionPrompt) return
     setIsRevising(true)
+    setRevisionError(null)
     const currentContent = versions.find((v) => v.version_number === activeVersion)?.content
 
     try {
@@ -232,13 +265,16 @@ export default function PrdViewPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prdId: id, revisionPrompt, previousContent: currentContent }),
       })
-      if (res.ok) {
-        setRevisionPrompt('')
-        setIsLoading(true)
-        setRefreshTrigger((prev) => prev + 1)
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({ error: 'Revision failed' }))
+        throw new Error(data.error || `Revision failed (${res.status})`)
       }
+      setRevisionPrompt('')
+      setIsLoading(true)
+      setRefreshTrigger((prev) => prev + 1)
     } catch (err) {
       console.error(err)
+      setRevisionError(err instanceof Error ? err.message : 'Something went wrong')
     } finally {
       setIsRevising(false)
     }
@@ -248,6 +284,23 @@ export default function PrdViewPage() {
     const c = versions.find((v) => v.version_number === activeVersion)?.content
     if (!c || !prd) return
     generateMarkdownAndDownload(prd.title, activeVersion, c)
+  }
+
+  // ISSUE-013: Delete PRD with cascade
+  const handleDelete = async () => {
+    if (!prd) return
+    setIsDeleting(true)
+    try {
+      const { error } = await supabase.from('prds').delete().eq('id', prd.id)
+      if (error) throw error
+      window.dispatchEvent(new CustomEvent('prd-created')) // refresh sidebar
+      router.push('/dashboard')
+    } catch (err) {
+      console.error('Delete error:', err)
+      setRevisionError('Failed to delete document.')
+      setIsDeleting(false)
+      setShowDeleteConfirm(false)
+    }
   }
 
   if (isLoading) {
@@ -315,6 +368,35 @@ export default function PrdViewPage() {
 
   return (
     <div className="flex flex-col h-full">
+      {/* ISSUE-010: Revision overlay */}
+      {isRevising && (
+        <div className="absolute inset-0 bg-surface-0/60 backdrop-blur-sm z-30 flex flex-col items-center justify-center gap-3">
+          <svg className="w-6 h-6 animate-spin text-accent" viewBox="0 0 16 16" fill="none">
+            <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="2" opacity="0.2" />
+            <path d="M14 8a6 6 0 00-6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          </svg>
+          <p className="text-sm text-ink-secondary font-medium">Revising document…</p>
+        </div>
+      )}
+
+      {/* ISSUE-013: Delete confirmation modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="bg-surface-raised border border-border rounded-lg p-6 max-w-sm w-full mx-4 shadow-xl">
+            <h3 className="font-display font-bold text-ink text-lg mb-2">Delete Document?</h3>
+            <p className="text-sm text-ink-secondary mb-5">This will permanently delete <strong>{prd?.title}</strong> and all its versions. This cannot be undone.</p>
+            <div className="flex gap-3 justify-end">
+              <button onClick={() => setShowDeleteConfirm(false)} disabled={isDeleting} className="px-4 py-2 text-sm font-medium text-ink-secondary bg-surface-1 border border-border rounded-md hover:bg-surface-raised transition-colors">
+                Cancel
+              </button>
+              <button onClick={handleDelete} disabled={isDeleting} className="px-4 py-2 text-sm font-medium text-white bg-danger hover:bg-red-700 rounded-md transition-colors disabled:opacity-50">
+                {isDeleting ? 'Deleting…' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Scrollable content area */}
       <div className="flex-1 overflow-y-auto">
         <div className="p-8 pb-6 max-w-3xl mx-auto">
@@ -363,6 +445,15 @@ export default function PrdViewPage() {
                   <path d="M3 4V1h6v3M1 4h10v5H9v2H3V9H1z" />
                 </svg>
                 PDF
+              </button>
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-danger bg-surface-raised border border-danger/20 rounded-md hover:bg-danger/5 transition-colors"
+                title="Delete this PRD"
+              >
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M1.5 3h9M4.5 3V1.5h3V3M9 3v7.5a1 1 0 01-1 1H4a1 1 0 01-1-1V3" />
+                </svg>
               </button>
             </div>
           </div>
@@ -691,7 +782,27 @@ export default function PrdViewPage() {
 
               <Divider />
 
-              {/* ─── 9. Information Architecture ─── */}
+              {/* ─── 9. System Architecture Diagram ─── */}
+              {c.architectureDiagram && (
+                <section>
+                  <SectionTitle id="system-architecture">System Architecture</SectionTitle>
+                  <MermaidRenderer chart={c.architectureDiagram} title="Architecture Overview" />
+                </section>
+              )}
+
+              <Divider />
+
+              {/* ─── 10. User Journey Diagram ─── */}
+              {c.userJourneyDiagram && (
+                <section>
+                  <SectionTitle id="user-journey">User Journey</SectionTitle>
+                  <MermaidRenderer chart={c.userJourneyDiagram} title="Primary User Flow" />
+                </section>
+              )}
+
+              <Divider />
+
+              {/* ─── 11. Information Architecture ─── */}
               {c.informationArchitecture && (
                 <section>
                   <SectionTitle id="information-architecture">Information Architecture</SectionTitle>
@@ -778,29 +889,175 @@ export default function PrdViewPage() {
 
               <Divider />
 
-              {/* ─── 12. Data Model ─── */}
-              {c.dataModel && c.dataModel.length > 0 && (
+              {/* ─── 14. Data Model & ERD ─── */}
+              {c.dataModel && (
                 <section>
-                  <SectionTitle id="data-model">Data Model</SectionTitle>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    {c.dataModel.map((entity, i) => (
-                      <div key={i} className="bg-surface-0 border border-border-subtle rounded-md p-4 overflow-hidden">
-                        <h3 className="font-semibold text-ink text-sm mb-2 font-mono">{entity.entity}</h3>
-                        <div className="space-y-0.5 mb-2">
-                          {entity.fields.map((field, fi) => (
-                            <p key={fi} className="text-xs font-mono text-ink-secondary">{field}</p>
+                  <SectionTitle id="data-model">Data Model &amp; ERD</SectionTitle>
+                  {/* New format: object with erdDiagram + tables */}
+                  {!Array.isArray(c.dataModel) && (
+                    <div className="space-y-6">
+                      {c.dataModel.erdDiagram && (
+                        <MermaidRenderer chart={c.dataModel.erdDiagram} title="Entity Relationship Diagram" />
+                      )}
+                      {c.dataModel.tables && c.dataModel.tables.length > 0 && (
+                        <div className="space-y-4">
+                          {c.dataModel.tables.map((table, ti) => (
+                            <div key={ti} className="bg-surface-0 border border-border-subtle rounded-md overflow-hidden">
+                              <div className="px-4 py-3 border-b border-border-subtle flex items-center justify-between">
+                                <div>
+                                  <h3 className="font-mono font-bold text-ink text-sm">{table.tableName}</h3>
+                                  {table.description && (
+                                    <p className="text-xs text-ink-tertiary mt-0.5">{table.description}</p>
+                                  )}
+                                </div>
+                              </div>
+                              <table className="w-full text-sm">
+                                <thead>
+                                  <tr className="border-b border-border-subtle bg-surface-1/50">
+                                    <th className="text-left px-4 py-2 text-[10px] font-mono text-ink-ghost uppercase tracking-wider w-8"></th>
+                                    <th className="text-left px-4 py-2 text-[10px] font-mono text-ink-ghost uppercase tracking-wider">Column</th>
+                                    <th className="text-left px-4 py-2 text-[10px] font-mono text-ink-ghost uppercase tracking-wider">Type</th>
+                                    <th className="text-left px-4 py-2 text-[10px] font-mono text-ink-ghost uppercase tracking-wider hidden sm:table-cell">Constraints</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {table.columns.map((col, ci) => {
+                                    const isPK = col.constraints?.toUpperCase().includes('PRIMARY KEY')
+                                    const isFK = col.constraints?.toUpperCase().includes('REFERENCES') || col.name.endsWith('_id')
+                                    return (
+                                      <tr key={ci} className="border-b border-border-subtle last:border-0">
+                                        <td className="px-4 py-2 text-center">
+                                          {isPK && <span title="Primary Key" className="text-amber-500 text-xs">🔑</span>}
+                                          {isFK && !isPK && <span title="Foreign Key" className="text-blue-400 text-xs">🔗</span>}
+                                        </td>
+                                        <td className="px-4 py-2 font-mono text-ink text-xs font-medium">{col.name}</td>
+                                        <td className="px-4 py-2 font-mono text-accent text-xs">{col.type}</td>
+                                        <td className="px-4 py-2 text-ink-tertiary text-xs hidden sm:table-cell">{col.constraints || '—'}</td>
+                                      </tr>
+                                    )
+                                  })}
+                                </tbody>
+                              </table>
+                              {(table.indexes && table.indexes.length > 0) && (
+                                <div className="px-4 py-2 border-t border-border-subtle">
+                                  <p className="text-[10px] font-mono text-ink-ghost uppercase tracking-wider mb-1">Indexes</p>
+                                  {table.indexes.map((idx, ii) => (
+                                    <p key={ii} className="text-xs font-mono text-ink-tertiary">{idx}</p>
+                                  ))}
+                                </div>
+                              )}
+                              {(table.relationships && table.relationships.length > 0) && (
+                                <div className="px-4 py-2 border-t border-border-subtle">
+                                  <p className="text-[10px] font-mono text-ink-ghost uppercase tracking-wider mb-1">Relationships</p>
+                                  {table.relationships.map((rel, ri) => (
+                                    <p key={ri} className="text-xs text-ink-tertiary flex items-baseline gap-1.5">
+                                      <span className="text-blue-400">🔗</span> {rel}
+                                    </p>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
                           ))}
                         </div>
-                        {entity.relationships && entity.relationships.length > 0 && (
-                          <div className="border-t border-border-subtle pt-2 mt-2">
-                            <p className="text-[10px] uppercase tracking-widest text-ink-ghost font-medium mb-1">Relationships</p>
-                            {entity.relationships.map((rel, ri) => (
-                              <p key={ri} className="text-xs text-ink-tertiary">{rel}</p>
+                      )}
+                    </div>
+                  )}
+                  {/* Legacy format: simple array of entities */}
+                  {Array.isArray(c.dataModel) && c.dataModel.length > 0 && (
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      {c.dataModel.map((entity, i) => (
+                        <div key={i} className="bg-surface-0 border border-border-subtle rounded-md p-4 overflow-hidden">
+                          <h3 className="font-semibold text-ink text-sm mb-2 font-mono">{entity.entity}</h3>
+                          <div className="space-y-0.5 mb-2">
+                            {entity.fields.map((field: string, fi: number) => (
+                              <p key={fi} className="text-xs font-mono text-ink-secondary">{field}</p>
                             ))}
                           </div>
-                        )}
-                      </div>
-                    ))}
+                          {entity.relationships && entity.relationships.length > 0 && (
+                            <div className="border-t border-border-subtle pt-2 mt-2">
+                              <p className="text-[10px] uppercase tracking-widest text-ink-ghost font-medium mb-1">Relationships</p>
+                              {entity.relationships.map((rel: string, ri: number) => (
+                                <p key={ri} className="text-xs text-ink-tertiary">{rel}</p>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </section>
+              )}
+
+              <Divider />
+
+              {/* ─── 15. API Design ─── */}
+              {c.apiEndpoints && c.apiEndpoints.length > 0 && (
+                <section>
+                  <SectionTitle id="api-design">API Design</SectionTitle>
+                  <div className="space-y-3">
+                    {c.apiEndpoints.map((ep, i) => {
+                      const methodColors: Record<string, string> = {
+                        GET: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
+                        POST: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+                        PUT: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+                        PATCH: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
+                        DELETE: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+                      }
+                      const mCls = methodColors[ep.method.toUpperCase()] || 'bg-surface-1 text-ink-secondary'
+                      return (
+                        <div key={i} className="bg-surface-0 border border-border-subtle rounded-md overflow-hidden">
+                          <div className="px-4 py-3 flex items-center gap-3 border-b border-border-subtle">
+                            <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded ${mCls}`}>
+                              {ep.method.toUpperCase()}
+                            </span>
+                            <code className="text-sm font-mono text-ink font-medium">{ep.path}</code>
+                          </div>
+                          <div className="px-4 py-3 space-y-2">
+                            {ep.description && (
+                              <p className="text-sm text-ink-secondary leading-relaxed">{ep.description}</p>
+                            )}
+                            {ep.authentication && (
+                              <p className="text-xs text-ink-tertiary">
+                                <span className="font-semibold text-ink">Auth:</span> {ep.authentication}
+                              </p>
+                            )}
+                            <div className="grid gap-3 sm:grid-cols-2">
+                              {(ep.requestParams && ep.requestParams.length > 0) && (
+                                <div>
+                                  <p className="text-[10px] font-mono text-ink-ghost uppercase tracking-wider mb-1">Params</p>
+                                  {ep.requestParams.map((p, pi) => (
+                                    <p key={pi} className="text-xs font-mono text-ink-secondary">{p}</p>
+                                  ))}
+                                </div>
+                              )}
+                              {(ep.requestBody && ep.requestBody.length > 0) && (
+                                <div>
+                                  <p className="text-[10px] font-mono text-ink-ghost uppercase tracking-wider mb-1">Request Body</p>
+                                  {ep.requestBody.map((b, bi) => (
+                                    <p key={bi} className="text-xs font-mono text-ink-secondary">{b}</p>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                            {ep.responseBody && (
+                              <div>
+                                <p className="text-[10px] font-mono text-ink-ghost uppercase tracking-wider mb-1">Response</p>
+                                <code className="text-xs font-mono text-accent block bg-surface-1/50 p-2 rounded">{ep.responseBody}</code>
+                              </div>
+                            )}
+                            {ep.responseCodes && ep.responseCodes.length > 0 && (
+                              <div className="flex flex-wrap gap-1.5 pt-1">
+                                {ep.responseCodes.map((code, ci) => (
+                                  <span key={ci} className="text-[10px] font-mono text-ink-ghost bg-surface-1 px-1.5 py-0.5 rounded">
+                                    {code}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
                   </div>
                 </section>
               )}
@@ -999,9 +1256,14 @@ export default function PrdViewPage() {
                   <path d="M14 2L7 13l-2-4-4-2 13-5z" />
                 </svg>
               )}
-              <span className="hidden sm:inline">Revise to v{activeVersion + 1}</span>
+              <span className="hidden sm:inline">Revise to v{(versions.length > 0 ? Math.max(...versions.map(v => v.version_number)) : activeVersion) + 1}</span>
             </button>
           </form>
+          {revisionError && (
+            <div className="mt-2 p-2 bg-danger/10 border border-danger/20 rounded-md text-xs text-danger text-center">
+              {revisionError}
+            </div>
+          )}
           <p className="text-[11px] text-ink-ghost mt-1.5 text-center">
             AI will generate a new version based on your instructions
           </p>

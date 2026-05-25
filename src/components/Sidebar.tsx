@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
 import Link from 'next/link'
@@ -53,7 +53,7 @@ interface SidebarProps {
 export default function Sidebar({ userEmail }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
   const searchRef = useRef<HTMLInputElement>(null)
 
   const [prds, setPrds] = useState<PrdItem[]>([])
@@ -102,11 +102,21 @@ export default function Sidebar({ userEmail }: SidebarProps) {
         setIsLoadingPrds(false)
       }
     }
-    fetchPrds()
+
+    // Debounce pathname-triggered fetches to avoid redundant requests
+    const timer = setTimeout(fetchPrds, 100)
+
+    // INT-001: Listen for custom event to auto-refresh after PRD creation
+    const handlePrdCreated = () => { fetchPrds() }
+    window.addEventListener('prd-created', handlePrdCreated)
+
     return () => {
       isMounted = false
+      clearTimeout(timer)
+      window.removeEventListener('prd-created', handlePrdCreated)
     }
-  }, [pathname, supabase])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname])
 
   // Keyboard shortcut: Ctrl+K to focus search
   useEffect(() => {
@@ -297,6 +307,15 @@ export default function Sidebar({ userEmail }: SidebarProps) {
             </svg>
             Log out
           </button>
+          <Link
+            href="/changelog"
+            className="w-full flex items-center gap-2.5 px-3 py-1.5 text-[11px] text-[#5a524b] hover:text-[#a89f97] rounded-md transition-colors font-mono"
+          >
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+              <path d="M6 1v10M1 6h10" />
+            </svg>
+            Changelog
+          </Link>
         </div>
       </aside>
 

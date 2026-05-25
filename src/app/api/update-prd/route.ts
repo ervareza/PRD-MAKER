@@ -12,10 +12,13 @@ const PRD_SCHEMA = `{
   "userStories": [{ "persona": "...", "story": "As a [role], I want [action] so that [benefit].", "acceptanceCriteria": [...], "priority": "Must Have|Should Have|Could Have|Won't Have" }],
   "coreFeatures": [{ "feature": "...", "description": "...", "userBenefit": "...", "acceptanceCriteria": [...], "priority": "Must Have|Should Have|Could Have", "complexity": "Low|Medium|High", "estimatedEffort": "..." }],
   "userFlows": [{ "name": "...", "steps": [...], "happyPath": "...", "edgeCases": [...] }],
+  "architectureDiagram": "Valid Mermaid graph TD syntax string with \\n newlines",
+  "userJourneyDiagram": "Valid Mermaid sequenceDiagram syntax string with \\n newlines",
   "informationArchitecture": { "siteMap": [...], "navigationModel": "...", "keyScreens": [...] },
   "nonFunctionalRequirements": { "performance": [...], "security": [...], "scalability": [...], "accessibility": [...], "reliability": [...], "compliance": [...] },
   "techStackRecommendation": { "frontend": { "technology": "...", "reasoning": "..." }, "backend": { "technology": "...", "reasoning": "..." }, "database": { "technology": "...", "reasoning": "..." }, "infrastructure": { "technology": "...", "reasoning": "..." }, "thirdPartyServices": [{ "service": "...", "purpose": "..." }], "architecturePattern": "..." },
-  "dataModel": [{ "entity": "...", "fields": [...], "relationships": [...] }],
+  "dataModel": { "erdDiagram": "Valid Mermaid erDiagram syntax string with \\n newlines", "tables": [{ "tableName": "...", "description": "...", "columns": [{ "name": "...", "type": "...", "constraints": "..." }], "indexes": [...], "relationships": [...] }] },
+  "apiEndpoints": [{ "method": "GET|POST|PUT|PATCH|DELETE", "path": "/api/v1/...", "description": "...", "authentication": "...", "requestParams": [...], "requestBody": [...], "responseBody": "...", "responseCodes": [...] }],
   "milestones": [{ "phase": "...", "duration": "...", "deliverables": [...], "successMetrics": [...] }],
   "successMetrics": { "northStarMetric": "...", "primaryKPIs": [{ "metric": "...", "target": "...", "measurement": "..." }], "secondaryKPIs": [{ "metric": "...", "target": "...", "measurement": "..." }] },
   "risksAndMitigations": [{ "risk": "...", "impact": "High|Medium|Low", "likelihood": "High|Medium|Low", "mitigation": "..." }],
@@ -31,9 +34,22 @@ export async function POST(req: Request) {
     if (authError || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { data: prd, error: prdError } = await supabase.from('prds').select('*').eq('id', prdId).single()
-    if (prdError || prd.user_id !== user.id) return NextResponse.json({ error: 'Unauthorized or PRD not found' }, { status: 401 })
+    if (prdError || !prd) return NextResponse.json({ error: 'Document not found' }, { status: 404 })
+    if (prd.user_id !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-    const systemPrompt = `You are an elite Principal Product Manager revising an existing Product Requirements Document (PRD).
+    // ISSUE-028: Enforce max version limit
+    const { count: versionCount } = await supabase
+      .from('prd_versions')
+      .select('*', { count: 'exact', head: true })
+      .eq('prd_id', prdId)
+    if (versionCount && versionCount >= 50) {
+      return NextResponse.json(
+        { error: 'This document has reached the maximum of 50 versions. Please create a new document.' },
+        { status: 400 }
+      )
+    }
+
+    const systemPrompt = `You are an elite Principal Product Manager and Solutions Architect revising an existing Product Requirements Document (PRD).
 
 Apply the user's revision request to the existing PRD content. Maintain the same comprehensive structure and level of detail. Preserve all sections — only modify what the revision request asks for. Keep unchanged sections intact. If the revision request implies adding new features, personas, or details, integrate them naturally.
 
@@ -43,40 +59,72 @@ ${PRD_SCHEMA}
 RULES:
 - Preserve all existing content that is NOT affected by the revision.
 - When adding or modifying, maintain the same level of depth and detail.
+- Mermaid diagram strings (architectureDiagram, userJourneyDiagram, dataModel.erdDiagram) must use \\n for newlines and must NOT be wrapped in markdown code fences. They must be valid Mermaid syntax.
 - Respond with ONLY the JSON object, no markdown code blocks, no other text.`
 
     const userPrompt = `Previous PRD Content: ${JSON.stringify(previousContent)}\n\nRevision Request: ${revisionPrompt}\n\nPlease generate the updated PRD JSON.`
 
-    const apiKey = process.env.GROQ_API_KEY
-    const baseUrl = process.env.GROQ_BASE_URL || 'https://api.groq.com/openai/v1'
-    const model = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile'
+    const apiKey = process.env.GEMINI_API_KEY
+    if (!apiKey) {
+      console.error('GEMINI_API_KEY environment variable is not set.')
+      return NextResponse.json(
+        { error: 'AI service is not configured. Please contact the administrator.' },
+        { status: 500 }
+      )
+    }
+    const model = process.env.GEMINI_MODEL || 'gemini-3.1-flash-lite'
 
-    const aiRes = await fetch(`${baseUrl}/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt },
-        ],
-        temperature: 0.7,
-        max_completion_tokens: 8192,
-        response_format: { type: 'json_object' },
-      }),
-    })
+    const aiRes = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          systemInstruction: {
+            parts: [{ text: systemPrompt }],
+          },
+          contents: [
+            {
+              role: 'user',
+              parts: [{ text: userPrompt }],
+            },
+          ],
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 65536,
+            responseMimeType: 'application/json',
+          },
+        }),
+      }
+    )
 
-    if (!aiRes.ok) throw new Error('AI generation failed')
+    if (!aiRes.ok) {
+      const errorText = await aiRes.text()
+      console.error('AI API Error (update):', aiRes.status, errorText)
+      throw new Error('AI revision failed. Please try again.')
+    }
 
     const aiData = await aiRes.json()
-    let prdContentRaw = aiData.choices[0].message.content
+    let prdContentRaw = aiData.candidates?.[0]?.content?.parts?.[0]?.text
+
+    if (!prdContentRaw) {
+      console.error('AI returned empty response during revision.')
+      throw new Error('AI returned an empty response. Please try again.')
+    }
+
     if (prdContentRaw.startsWith('```json')) {
       prdContentRaw = prdContentRaw.replace(/^```json\n?/, '').replace(/\n?```$/, '')
     }
-    const prdContent = JSON.parse(prdContentRaw)
+    let prdContent
+    try {
+      prdContent = JSON.parse(prdContentRaw)
+    } catch {
+      console.error('AI returned malformed JSON during revision.')
+      return NextResponse.json(
+        { error: 'The AI produced an invalid response. Please try revising again.' },
+        { status: 502 }
+      )
+    }
 
     const { data: latestVersion } = await supabase
       .from('prd_versions')
