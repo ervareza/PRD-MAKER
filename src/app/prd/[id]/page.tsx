@@ -1300,7 +1300,7 @@ function FloatingChatBar({
   }
 
   return (
-    <div className="absolute bottom-0 left-0 right-0 flex justify-center pointer-events-none print:hidden px-4 pb-4 pt-16 bg-gradient-to-t from-surface-0 via-surface-0/90 to-transparent">
+    <div className="sticky bottom-0 left-0 right-0 flex justify-center pointer-events-none print:hidden px-4 pb-4 pt-16 bg-gradient-to-t from-surface-0 via-surface-0/90 to-transparent z-30">
       <div className="w-full max-w-3xl pointer-events-auto flex flex-col items-center">
         <form 
           onSubmit={handleSubmit} 
