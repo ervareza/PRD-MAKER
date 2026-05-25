@@ -1,6 +1,6 @@
 {
   "name": "prd-generator",
-  "version": "0.1.0",
+  "version": "2.2.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -28,5 +28,8 @@
     "eslint-config-next": "16.2.6",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }
