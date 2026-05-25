@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 
-export const maxDuration = 60
+export const maxDuration = 120
 
 const PRD_SCHEMA = `{
   "executiveSummary": "...",
@@ -27,7 +27,33 @@ const PRD_SCHEMA = `{
 
 export async function POST(req: Request) {
   try {
-    const { prdId, revisionPrompt, previousContent } = await req.json()
+    const body = await req.json()
+    const prdId = typeof body.prdId === 'string' ? body.prdId.trim() : ''
+    const revisionPrompt = typeof body.revisionPrompt === 'string' ? body.revisionPrompt.trim() : ''
+    const previousContent = body.previousContent
+
+    if (!prdId) {
+      return NextResponse.json({ error: 'Document ID is required.' }, { status: 400 })
+    }
+    if (!revisionPrompt || revisionPrompt.length < 3) {
+      return NextResponse.json(
+        { error: 'Revision prompt is required (minimum 3 characters).' },
+        { status: 400 }
+      )
+    }
+    if (revisionPrompt.length > 5000) {
+      return NextResponse.json(
+        { error: 'Revision prompt must be under 5,000 characters.' },
+        { status: 400 }
+      )
+    }
+    if (!previousContent || typeof previousContent !== 'object') {
+      return NextResponse.json(
+        { error: 'Previous document content is required.' },
+        { status: 400 }
+      )
+    }
+
     const supabase = await createClient()
 
     const { data: { user }, error: authError } = await supabase.auth.getUser()
